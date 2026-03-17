@@ -10,7 +10,10 @@
     "deploy:pipeline-nft": "node contracts/deploy-pipeline-nft.js",
     "deploy:escrow": "hardhat run contracts/scripts/deploy-escrow.js --network hedera_testnet",
     "watcher:start": "node agents/watcher/index.js",
-    "token:test:create": "node scripts/create-test-token.js"
+    "plumber:start": "node agents/plumber/index.js",
+    "token:test:create": "node scripts/create-test-token.js",
+    "task:mock": "node scripts/publish-mock-taskbundle.js",
+    "pipeline:complete": "node scripts/publish-pipeline-complete.js"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.69.0",
