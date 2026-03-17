@@ -1,0 +1,37 @@
+# Secrets and environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Editor and OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Build and tooling artifacts
+artifacts/
+cache/
+coverage/
+dist/
+build/
+
+# Runtime state and logs
+*.log
+*.tmp
+*.swp
+**/.state/
+
+# OpenClaw local workspaces
+agents/*/workspace/
+
+# Accidental malformed folder from local extraction
+{agents/

@@ -1,0 +1,24 @@
+{
+  "name": "hive-mind",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HIVE MIND autonomous Hedera agent pipeline",
+  "scripts": {
+    "test:connection": "node agents/shared/test-connection.js",
+    "setup:topics": "node agents/shared/setup-topics.js",
+    "deploy:pipe-token": "node contracts/deploy-pipe-token.js",
+    "deploy:pipeline-nft": "node contracts/deploy-pipeline-nft.js",
+    "deploy:escrow": "hardhat run contracts/scripts/deploy-escrow.js --network hedera_testnet",
+    "watcher:start": "node agents/watcher/index.js",
+    "token:test:create": "node scripts/create-test-token.js"
+  },
+  "dependencies": {
+    "@hashgraph/sdk": "^2.69.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.2"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.6",
+    "hardhat": "^2.22.8"
+  }
+}
