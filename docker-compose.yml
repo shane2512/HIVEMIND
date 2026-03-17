@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  watcher:
+    build: ./agents/watcher
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - setup
+
+  plumber:
+    build: ./agents/plumber
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - setup
+
+  wallet-analyst:
+    build: ./agents/wallet-analyst
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - setup
+
+  sentiment:
+    build: ./agents/sentiment
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - setup
+
+  liquidity:
+    build: ./agents/liquidity
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - setup
+
+  risk-scorer:
+    build: ./agents/risk-scorer
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - setup
+
+  report-publisher:
+    build: ./agents/report-publisher
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - setup
+
+  setup:
+    build: ./agents/shared
+    command: node setup-topics.js
+    env_file: .env
+    restart: "no"
+
+  dashboard:
+    build: ./ui
+    ports:
+      - "3000:3000"
+    env_file: .env
+    restart: unless-stopped
