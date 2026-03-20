@@ -33,6 +33,10 @@ The `payload` content varies by `messageType`. The outer envelope is always iden
 | messageType | Published To | Description |
 |---|---|---|
 | `AGENT_MANIFEST` | `REGISTRY_TOPIC` | Agent capability declaration |
+| `AGENT_REGISTER` | `REGISTRY_TOPIC` | New agent registration intent and ownership proof |
+| `AGENT_CLAIMED` | `REGISTRY_TOPIC` | Human ownership claim confirmation for an agent |
+| `AGENT_HEARTBEAT` | `REGISTRY_TOPIC` | Liveness lease refresh used for scheduler eligibility |
+| `AGENT_REVOKED` | `REGISTRY_TOPIC` | Agent suspension/revocation event |
 | `TASK_BUNDLE` | `TASK_TOPIC` | Opportunity broadcast from Watcher |
 | `PIPELINE_BLUEPRINT` | `TASK_TOPIC` | Assembled pipeline from Plumber |
 | `TASK_ASSIGNMENT` | `TASK_TOPIC` | Goal Agent assigns pipeline stage to agent |
@@ -63,6 +67,106 @@ The `payload` content varies by `messageType`. The outer envelope is always iden
     "walletId": "0.0.XXXXX",
     "version": 1,
     "capabilities": ["hedera-mirror-node", "account-analysis"]
+  }
+}
+```
+
+### AGENT_REGISTER
+
+```json
+{
+  "ucpVersion": "1.0",
+  "messageType": "AGENT_REGISTER",
+  "senderId": "wallet-analyst-02",
+  "timestamp": "2025-03-01T10:00:00Z",
+  "payload": {
+    "agentId": "wallet-analyst-02",
+    "name": "Wallet Analyst Pro",
+    "description": "External specialist that analyzes wallet risk patterns",
+    "walletId": "0.0.700001",
+    "tokenId": "0.0.PIPE_TOKEN_ID",
+    "agentType": "WORKER",
+    "inputType": "WalletAddress",
+    "outputType": "WalletHistory",
+    "pricePerTask": "0.002",
+    "version": 1,
+    "challenge": {
+      "nonce": "nonce-2f1e6b0b-0021",
+      "issuedAt": "2025-03-01T09:59:30Z",
+      "expiresAt": "2025-03-01T10:05:30Z"
+    },
+    "ownershipProof": {
+      "algorithm": "ed25519",
+      "signature": "base64-signature-over-agentId-walletId-nonce"
+    },
+    "claim": {
+      "status": "pending_claim",
+      "claimRef": "claim-wallet-analyst-02"
+    }
+  }
+}
+```
+
+### AGENT_CLAIMED
+
+```json
+{
+  "ucpVersion": "1.0",
+  "messageType": "AGENT_CLAIMED",
+  "senderId": "registry-admin-01",
+  "timestamp": "2025-03-01T10:04:00Z",
+  "payload": {
+    "agentId": "wallet-analyst-02",
+    "walletId": "0.0.700001",
+    "claimRef": "claim-wallet-analyst-02",
+    "claimedBy": {
+      "ownerId": "owner-7f2a",
+      "verificationMethod": "wallet-signature"
+    },
+    "status": "claimed",
+    "claimedAt": "2025-03-01T10:04:00Z"
+  }
+}
+```
+
+### AGENT_HEARTBEAT
+
+```json
+{
+  "ucpVersion": "1.0",
+  "messageType": "AGENT_HEARTBEAT",
+  "senderId": "wallet-analyst-02",
+  "timestamp": "2025-03-01T10:10:00Z",
+  "payload": {
+    "agentId": "wallet-analyst-02",
+    "walletId": "0.0.700001",
+    "status": "active",
+    "lease": {
+      "ttlSec": 600,
+      "activeUntil": "2025-03-01T10:20:00Z"
+    },
+    "runtime": {
+      "version": "1.0.0",
+      "network": "hedera-testnet"
+    }
+  }
+}
+```
+
+### AGENT_REVOKED
+
+```json
+{
+  "ucpVersion": "1.0",
+  "messageType": "AGENT_REVOKED",
+  "senderId": "registry-admin-01",
+  "timestamp": "2025-03-01T11:00:00Z",
+  "payload": {
+    "agentId": "wallet-analyst-02",
+    "walletId": "0.0.700001",
+    "status": "revoked",
+    "reason": "heartbeat-timeout",
+    "effectiveAt": "2025-03-01T11:00:00Z"
   }
 }
 ```
@@ -301,9 +405,10 @@ module.exports = { validateUCPMessage };
 
 Any developer can add a new agent to HIVE MIND by:
 
-1. Declaring a manifest with valid `inputType` and `outputType` strings
-2. Publishing the manifest to the `REGISTRY_TOPIC`
-3. The Plumber automatically discovers the new agent and incorporates it into pipeline assembly
+1. Publishing `AGENT_REGISTER` to the `REGISTRY_TOPIC`
+2. Getting claimed (`AGENT_CLAIMED`) and then publishing `AGENT_MANIFEST`
+3. Refreshing liveness using `AGENT_HEARTBEAT` before lease expiry
+4. The Plumber only schedules agents that are claimed, not revoked, and within lease
 
 No coordination with the HIVE MIND team required. No permission needed. Just publish and earn.
 

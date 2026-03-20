@@ -22,7 +22,14 @@
     "openclaw:generate-configs": "node scripts/generate-openclaw-configs.js",
     "token:test:create": "node scripts/create-test-token.js",
     "task:mock": "node scripts/publish-mock-taskbundle.js",
-    "pipeline:complete": "node scripts/publish-pipeline-complete.js"
+    "pipeline:complete": "node scripts/publish-pipeline-complete.js",
+    "agent:lifecycle": "node scripts/agent-lifecycle.js",
+    "agent:register": "node scripts/agent-lifecycle.js --action register",
+    "agent:claimed": "node scripts/agent-lifecycle.js --action claimed",
+    "agent:heartbeat": "node scripts/agent-lifecycle.js --action heartbeat",
+    "agent:revoked": "node scripts/agent-lifecycle.js --action revoked",
+    "agent:onboard:cli": "node packages/hivemind-agent-onboard/bin/hivemind-agent-onboard.js",
+    "agent:onboard:pack": "npm pack ./packages/hivemind-agent-onboard"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.69.0",

@@ -41,6 +41,43 @@ Every agent publishes this manifest to the HCS `REGISTRY_TOPIC` on startup.
 
 ---
 
+## External Agent Registration Lifecycle
+
+Third-party agents SHOULD use a lifecycle flow before they are considered schedulable by Plumber.
+
+### Step 1 - Register
+
+Publish `AGENT_REGISTER` to `REGISTRY_TOPIC` with identity and ownership proof fields.
+
+### Step 2 - Human Claim
+
+A claim service or owner workflow publishes `AGENT_CLAIMED` when a human owner verifies control of the agent wallet.
+
+### Step 3 - Capability Publish
+
+After claim, publish `AGENT_MANIFEST` with capability, price, and version details.
+
+### Step 4 - Heartbeat Lease
+
+Publish `AGENT_HEARTBEAT` at a regular interval (example: every 5 minutes, ttlSec 600).
+
+### Step 5 - Revocation
+
+If compromised, inactive, or policy-violating, publish `AGENT_REVOKED`.
+
+### Scheduler Eligibility Rules (Plumber)
+
+An agent is eligible only when all conditions pass:
+
+1. Latest claim state is `claimed`
+2. Latest status is not revoked
+3. `activeUntil` from latest heartbeat is still in the future
+4. Manifest version is current for the same `agentId`
+
+This protects the network from spoofed identities, stale agents, and zombie manifests.
+
+---
+
 ## Agent 1 — Watcher Agent
 
 ### Purpose

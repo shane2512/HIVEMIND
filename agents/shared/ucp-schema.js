@@ -2,6 +2,10 @@ const REQUIRED_FIELDS = ['ucpVersion', 'messageType', 'senderId', 'timestamp', '
 
 const VALID_MESSAGE_TYPES = [
   'AGENT_MANIFEST',
+  'AGENT_REGISTER',
+  'AGENT_CLAIMED',
+  'AGENT_HEARTBEAT',
+  'AGENT_REVOKED',
   'TASK_BUNDLE',
   'PIPELINE_BLUEPRINT',
   'TASK_ASSIGNMENT',
