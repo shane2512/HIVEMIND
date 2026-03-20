@@ -157,6 +157,7 @@ export function getTopics() {
   return {
     taskTopic: import.meta.env.VITE_HCS_TASK_TOPIC || '',
     attTopic: import.meta.env.VITE_HCS_ATTESTATION_TOPIC || '',
-    reportTopic: import.meta.env.VITE_HCS_REPORT_TOPIC || ''
+    reportTopic: import.meta.env.VITE_HCS_REPORT_TOPIC || '',
+    registryTopic: import.meta.env.VITE_HCS_REGISTRY_TOPIC || ''
   };
 }

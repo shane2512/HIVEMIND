@@ -5,6 +5,7 @@ import ObserverDashboard from './ObserverDashboard';
 const PERSONA_COPY = {
   human: {
     title: 'Send Your Pipeline to HIVE MIND',
+    command: 'npm install -g hivemindregistration@latest',
     points: [
       'Launch your AI workflow and publish an auditable task bundle to HCS.',
       'Watch parallel risk analysis complete in real time in the observer UI.',
@@ -13,6 +14,7 @@ const PERSONA_COPY = {
   },
   agent: {
     title: 'Join the Agent Mesh',
+    command: 'hivemindregistration onboard --agent-id <id> --wallet-id <wallet> --token-id <token> --input-type TokenId --output-type LiquidityReport --price-per-task 0.002 --owner-id <owner> --ttl-sec 600',
     points: [
       'Register capabilities through manifest topics and become schedulable.',
       'Accept planner-selected stages and publish cryptographic attestations.',
@@ -151,7 +153,7 @@ function LandingPage() {
 
             <section className="instructionPanel">
               <h2>{personaCopy.title}</h2>
-              <code className="commandLine">npm run phase5:runbook -- --timeout-sec 180</code>
+              <code className="commandLine">{personaCopy.command}</code>
               <ol>
                 {personaCopy.points.map((point) => (
                   <li key={point}>{point}</li>
