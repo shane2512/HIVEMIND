@@ -76,6 +76,20 @@ npm run agents:start
 cd ui && npm run dev
 ```
 
+### One-Command Phase 5 Evidence Run
+
+Use the runbook script to automatically launch the agent runtime, create a real test token, verify the full pipeline chain, and archive JSON evidence under `artifacts/runs/`.
+
+```bash
+npm run phase5:runbook
+```
+
+Useful flags:
+
+- `-- --reuse-runtime` to skip starting local agents
+- `-- --timeout-sec 300` to extend verification timeout
+- `-- --keep-runtime` to leave agents running after completion
+
 ---
 
 ## Repository Structure

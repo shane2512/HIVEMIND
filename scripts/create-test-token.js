@@ -27,14 +27,24 @@ async function createTestToken() {
     throw new Error('Token creation succeeded but token ID missing in receipt');
   }
 
-  console.log(`Created test token: ${tokenId}`);
-  console.log(`Name: ${name}`);
-  console.log(`Symbol: ${symbol}`);
-  console.log(`Transaction ID: ${tx.transactionId.toString()}`);
+  return {
+    tokenId,
+    txId: tx.transactionId.toString(),
+    name,
+    symbol
+  };
+}
+
+async function main() {
+  const created = await createTestToken();
+  console.log(`Created test token: ${created.tokenId}`);
+  console.log(`Name: ${created.name}`);
+  console.log(`Symbol: ${created.symbol}`);
+  console.log(`Transaction ID: ${created.txId}`);
 }
 
 if (require.main === module) {
-  createTestToken().catch((err) => {
+  main().catch((err) => {
     console.error(err.message);
     process.exit(1);
   });

@@ -1,0 +1,259 @@
+HIVE MIND: Detailed Idea and Progress Report
+Date: 2026-03-19
+Status: Live multi-agent pipeline running on Hedera Testnet with local LLM-first reasoning and successful end-to-end validation.
+
+====================================================================
+1) Vision and Product Goal
+====================================================================
+
+HIVE MIND is a Hedera-native autonomous intelligence system designed to evaluate token activity and publish structured risk intelligence through HCS.
+
+Primary goal:
+- Turn token-event detection into a repeatable, auditable, and mostly autonomous due-diligence workflow.
+
+Why this matters:
+- Most token-review workflows are manual, fragmented, and difficult to audit.
+- HIVE MIND makes the full decision chain observable through on-ledger message flow.
+- The architecture supports progressive intelligence upgrades (LLM-first reasoning) while preserving deterministic fallback for reliability.
+
+Core outcomes expected from the product:
+- Event ingestion from Hedera ecosystem signals.
+- Pipeline planning based on registered capabilities and budget constraints.
+- Parallelized analytical stage execution.
+- Unified risk scoring and publication of a final HIVE_REPORT.
+- A verifiable, topic-driven execution trail from trigger to settlement.
+
+====================================================================
+2) System Architecture Overview
+====================================================================
+
+Main agent roles:
+- watcher:
+  - Detects qualifying tokens (age/liquidity filters plus LLM triage).
+  - Publishes TASK_BUNDLE.
+
+- plumber:
+  - Loads agent manifests from registry topic.
+  - Builds and publishes PIPELINE_BLUEPRINT or PIPELINE_FAILED.
+  - Tracks pipeline completion counts and optional NFT mint thresholds.
+
+- wallet-analyst:
+  - Performs wallet/account behavior analysis.
+  - Publishes TASK_ATTESTATION with WalletHistory output summary.
+
+- sentiment:
+  - Scans topic/message context for token mention sentiment.
+  - Publishes TASK_ATTESTATION with SentimentScore output summary.
+
+- liquidity:
+  - Computes concentration and liquidity indicators.
+  - Publishes TASK_ATTESTATION with LiquidityReport output summary.
+
+- risk-scorer:
+  - Aggregates upstream outputs into normalized risk.
+  - Publishes TASK_ATTESTATION with RiskScore output summary.
+
+- report-publisher:
+  - Builds final HIVE_REPORT.
+  - Publishes TASK_ATTESTATION and PIPELINE_COMPLETE.
+
+Execution order:
+- Stage 0 in parallel: wallet-analyst, sentiment, liquidity
+- Stage 1: risk-scorer
+- Stage 2: report-publisher
+
+Topic-oriented protocol model:
+- TASK_BUNDLE -> PIPELINE_BLUEPRINT -> TASK_ATTESTATION chain -> HIVE_REPORT -> PIPELINE_COMPLETE
+
+====================================================================
+3) LLM Strategy and Reasoning Model
+====================================================================
+
+Design principle:
+- LLM-first reasoning with deterministic fallback.
+
+What LLM-first means in this project:
+- The default path asks local Ollama model phi3.5 for structured reasoning and/or summary.
+- If LLM returns invalid output, times out, or is disabled, deterministic logic keeps pipeline continuity.
+
+Shared LLM utility:
+- askLocalText and askLocalJson wrappers for local inference calls.
+- JSON extraction and validation helpers.
+- Confidence normalization and output sanitation patterns.
+
+LLM-first coverage by component:
+- watcher triage decision.
+- plumber stage selection and planning rationale.
+- wallet behavior interpretation.
+- sentiment classification.
+- liquidity risk interpretation.
+- risk-score synthesis.
+- report summary composition.
+
+Reliability controls:
+- Supports confidence values in either 0-1 or 0-100 range.
+- Validates expected JSON schema before accepting model output.
+- Applies guardrails when model output could contradict basic risk sanity.
+
+====================================================================
+4) Major Implementation Work Completed
+====================================================================
+
+A) Shared reasoning and Hedera integration foundations
+- Added shared local LLM utility.
+- Added shared Hedera LangChain utility.
+- Updated shared Hedera kit entry to use new integration path.
+
+B) Agent runtime entrypoints and loops
+- Added or finalized runtime entrypoints for:
+  - wallet-analyst
+  - sentiment
+  - liquidity
+  - risk-scorer
+  - report-publisher
+- Added or upgraded shared loops and helper scripts for worker orchestration, risk scoring, report publishing, and pipeline utilities.
+
+C) OpenClaw and model configuration tooling
+- Added profile config generator script.
+- Regenerated openclaw-configs artifacts for all target agents.
+- Updated install scripts to sync shared scripts and shared utils into profile workspaces.
+- Added local model instruction file for hivemind-phi3.5.
+
+D) Dependencies and npm scripts
+- Added required local-LLM and LangChain dependencies.
+- Added scripts for phase startup, verification, runbook orchestration, and config generation.
+
+====================================================================
+5) Runtime Hardening and Bug Fixes Applied
+====================================================================
+
+1. Confidence normalization
+- Problem: mixed confidence scales from model outputs.
+- Fix: normalized to bounded 0-100 consistently.
+
+2. Signal serialization
+- Problem: object-shaped signals rendered as non-useful values.
+- Fix: normalized to readable string signals.
+
+3. Liquidity guardrails
+- Problem: edge outputs could understate concentration risk.
+- Fix: deterministic safety limits for extreme concentration scenarios.
+
+4. Plumber resilience
+- Problem: malformed TASK_BUNDLE could stall processing loop.
+- Fix: malformed bundles are skipped and converted into PIPELINE_FAILED path instead of blocking run.
+
+5. Worker lookup/read depth
+- Problem: under topic churn, task lookups could miss related bundles.
+- Fix: larger read window and configurable lookup depth.
+
+6. Verify resilience
+- Problem: transient fetch failures could abort verification early.
+- Fix: retry within polling loop and continue until timeout.
+
+7. Runbook determinism improvements
+- Seeded TASK_BUNDLE after token creation.
+- Optional watcher inclusion mode.
+- State reset behavior for clean runs by default.
+
+====================================================================
+6) UI Delivery Status
+====================================================================
+
+UI stack:
+- React + Vite observer dashboard.
+
+What the UI currently exposes:
+- Pipeline and activity stats.
+- Active/completed pipeline visibility.
+- Flow/timeline style operational visualization.
+- Feed filtering.
+- Snapshot export.
+
+Operational note:
+- UI is running against the same Mirror/HCS environment used by agents and verification scripts.
+
+====================================================================
+7) Validation and Evidence Snapshot
+====================================================================
+
+Recent successful end-to-end validation included:
+- All agents running in separate terminals.
+- UI running concurrently.
+- Real HTS token creation executed.
+- Full chain confirmation:
+  - TASK_BUNDLE observed
+  - PIPELINE_BLUEPRINT observed
+  - 5 expected TASK_ATTESTATION events observed
+  - HIVE_REPORT observed
+  - PIPELINE_COMPLETE observed
+
+Observed settlement behavior:
+- totalPipeSettled present and consistent with pipeline economics.
+- allAttestationsVerified true in completion payload.
+
+Recorded successful run artifact:
+- run id: run-20260319-104222
+- verify status: ok true
+
+Additional live check completed later in session:
+- tokenId: 0.0.8286884
+- verify status: ok true
+
+====================================================================
+8) Current Operational State
+====================================================================
+
+As of 2026-03-19:
+- Core architecture is implemented and functioning.
+- Agents are LLM-first with deterministic fallback behavior.
+- Runbook and verification tooling are usable for repeatable evidence generation.
+- UI is operational for real-time observation.
+
+In plain terms:
+- The project is no longer just a prototype design.
+- It is running end-to-end with live Hedera data and successful completion signals.
+
+====================================================================
+9) Known Constraints and Tradeoffs
+====================================================================
+
+1. High event volume can introduce queueing delay
+- Mitigated by deterministic runbook mode and state reset options.
+
+2. LLM output variability
+- Mitigated by validators, normalization, and deterministic fallback.
+
+3. External network/mirror intermittency
+- Mitigated by retry-aware verification and loop reconnection behavior.
+
+4. Planner quality depends on manifest quality
+- Better manifest metadata yields more reliable stage plans.
+
+====================================================================
+10) What Is Ready vs What Is Next
+====================================================================
+
+Ready now:
+- Live multi-agent execution.
+- LLM-first reasoning path across full chain.
+- HCS-based auditable event lifecycle.
+- UI observer and verification scripts.
+
+Next recommended steps:
+- Add richer regression suites around runbook modes.
+- Expand alerting and health telemetry (per-agent lag, queue depth, failure rate).
+- Add environment profiles (dev/demo/load) with explicit throughput guardrails.
+- Add signed evidence packaging for report + attestation bundles.
+
+====================================================================
+11) Final Summary
+====================================================================
+
+HIVE MIND has reached a meaningful execution milestone:
+- the original concept (autonomous Hedera intelligence pipeline) is implemented,
+- LLM-first reasoning is active across the agent chain,
+- deterministic safeguards are in place,
+- and real tokens have been processed through full end-to-end completion with verifiable outputs.
+
+This provides a solid foundation for scaling reliability, observability, and productization.

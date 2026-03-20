@@ -4,6 +4,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+$envPath = Join-Path $RootPath '.env'
+if (-not (Test-Path $envPath)) {
+  throw ".env not found at $envPath"
+}
+
 $agents = @(
   'watcher',
   'plumber',
@@ -14,37 +19,7 @@ $agents = @(
   'report-publisher'
 )
 
-function Get-EnvValue {
-  param([string]$Key)
-  $line = Get-Content (Join-Path $RootPath '.env') | Where-Object { $_ -match "^$Key=" } | Select-Object -First 1
-  if (-not $line) { return '' }
-  return $line.Split('=', 2)[1].Trim()
-}
-
-$provider = Get-EnvValue 'LLM_PROVIDER'
-if (-not $provider) { $provider = 'openrouter' }
-
-$model = switch ($provider.ToLower()) {
-  'openrouter' {
-    $m = Get-EnvValue 'OPENROUTER_MODEL'
-    if ($m) { $m } else { 'openrouter/deepseek/deepseek-chat-v3-0324:free' }
-  }
-  'groq' {
-    $m = Get-EnvValue 'GROQ_MODEL'
-    if ($m) { $m } else { 'groq/llama-3.3-70b-versatile' }
-  }
-  'deepseek' {
-    $m = Get-EnvValue 'DEEPSEEK_MODEL'
-    if ($m) { $m } else { 'deepseek/deepseek-chat' }
-  }
-  'ollama' {
-    $m = Get-EnvValue 'OLLAMA_MODEL'
-    if ($m) { $m } else { 'ollama/deepseek-r1:8b' }
-  }
-  default {
-    'openrouter/deepseek/deepseek-chat-v3-0324:free'
-  }
-}
+node (Join-Path $RootPath 'scripts/generate-openclaw-configs.js') --root $RootPath | Out-Host
 
 foreach ($agent in $agents) {
   $profileName = $agent
@@ -52,9 +27,11 @@ foreach ($agent in $agents) {
   $workspaceDir = Join-Path $profileDir 'workspace'
   $skillsDir = Join-Path $workspaceDir 'skills'
   $workspaceScripts = Join-Path $workspaceDir 'scripts'
+  $workspaceUtils = Join-Path $workspaceDir 'utils'
 
   New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
   New-Item -ItemType Directory -Force -Path $workspaceScripts | Out-Null
+  New-Item -ItemType Directory -Force -Path $workspaceUtils | Out-Null
 
   $coreTarget = Join-Path $skillsDir 'hedera-core'
   if (Test-Path $coreTarget) { Remove-Item -Recurse -Force $coreTarget }
@@ -67,13 +44,14 @@ foreach ($agent in $agents) {
   Get-ChildItem (Join-Path $RootPath 'agents/shared/scripts') -File | ForEach-Object {
     Copy-Item -Force $_.FullName (Join-Path $workspaceScripts $_.Name)
   }
+  Get-ChildItem (Join-Path $RootPath 'agents/shared/utils') -File -Filter '*.js' | ForEach-Object {
+    Copy-Item -Force $_.FullName (Join-Path $workspaceUtils $_.Name)
+  }
   Get-ChildItem (Join-Path $RootPath 'agents/shared') -File -Filter '*.js' | ForEach-Object {
     Copy-Item -Force $_.FullName (Join-Path $workspaceDir $_.Name)
   }
   Copy-Item -Force (Join-Path $RootPath '.env') (Join-Path $workspaceDir '.env')
 
-  openclaw --profile $profileName config set agents.defaults.workspace $workspaceDir | Out-Host
-  openclaw --profile $profileName config set agents.defaults.model.primary $model | Out-Host
   openclaw --profile $profileName config validate | Out-Host
 
   $configPath = Join-Path $profileDir 'openclaw.json'

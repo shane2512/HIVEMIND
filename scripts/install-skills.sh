@@ -9,37 +9,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
-get_env() {
-  local key="$1"
-  grep -E "^${key}=" "$ENV_FILE" | head -n1 | cut -d'=' -f2-
-}
-
-LLM_PROVIDER="$(get_env LLM_PROVIDER)"
-if [[ -z "$LLM_PROVIDER" ]]; then
-  LLM_PROVIDER="openrouter"
-fi
-
-case "${LLM_PROVIDER,,}" in
-  openrouter)
-    MODEL="$(get_env OPENROUTER_MODEL)"
-    MODEL="${MODEL:-openrouter/deepseek/deepseek-chat-v3-0324:free}"
-    ;;
-  groq)
-    MODEL="$(get_env GROQ_MODEL)"
-    MODEL="${MODEL:-groq/llama-3.3-70b-versatile}"
-    ;;
-  deepseek)
-    MODEL="$(get_env DEEPSEEK_MODEL)"
-    MODEL="${MODEL:-deepseek/deepseek-chat}"
-    ;;
-  ollama)
-    MODEL="$(get_env OLLAMA_MODEL)"
-    MODEL="${MODEL:-ollama/deepseek-r1:8b}"
-    ;;
-  *)
-    MODEL="openrouter/deepseek/deepseek-chat-v3-0324:free"
-    ;;
-esac
+node "$ROOT_DIR/scripts/generate-openclaw-configs.js" --root "$ROOT_DIR"
 
 AGENTS=(
   watcher
@@ -56,18 +26,18 @@ for agent in "${AGENTS[@]}"; do
   workspace_dir="$profile_dir/workspace"
   skills_dir="$workspace_dir/skills"
   scripts_dir="$workspace_dir/scripts"
+  utils_dir="$workspace_dir/utils"
 
-  mkdir -p "$skills_dir" "$scripts_dir"
+  mkdir -p "$skills_dir" "$scripts_dir" "$utils_dir"
   rm -rf "$skills_dir/hedera-core" "$skills_dir/$agent"
 
   cp -R "$ROOT_DIR/skills/hedera-core" "$skills_dir/hedera-core"
   cp -R "$ROOT_DIR/skills/$agent" "$skills_dir/$agent"
   cp -f "$ROOT_DIR"/agents/shared/scripts/*.js "$scripts_dir/"
+  cp -f "$ROOT_DIR"/agents/shared/utils/*.js "$utils_dir/"
   cp -f "$ROOT_DIR"/agents/shared/*.js "$workspace_dir/"
   cp -f "$ROOT_DIR/.env" "$workspace_dir/.env"
 
-  openclaw --profile "$agent" config set agents.defaults.workspace "$workspace_dir"
-  openclaw --profile "$agent" config set agents.defaults.model.primary "$MODEL"
   openclaw --profile "$agent" config validate
 
   echo "[OK] configured profile for $agent"
