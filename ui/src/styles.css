@@ -145,6 +145,156 @@ a {
   flex-wrap: wrap;
 }
 
+.observerTabs {
+  margin-top: 14px;
+  display: inline-flex;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px;
+  background: rgba(21, 31, 51, 0.8);
+}
+
+.observerTabBtn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 14px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.observerTabBtn.active {
+  color: var(--ink);
+  border-color: rgba(83, 200, 255, 0.45);
+  background: rgba(83, 200, 255, 0.12);
+}
+
+.postStream {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.postCard {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(165deg, rgba(22, 34, 54, 0.92), rgba(17, 25, 39, 0.92));
+  padding: 14px;
+}
+
+.emptyPost h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.emptyPost p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.postHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.postHead h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.postHead p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.postRisk {
+  min-width: 76px;
+  border: 1px solid rgba(83, 200, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(83, 200, 255, 0.11);
+  text-align: center;
+  padding: 8px;
+}
+
+.postRiskLabel {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.postRisk strong {
+  font-size: 22px;
+}
+
+.postBody {
+  margin: 12px 0;
+  line-height: 1.55;
+  color: #deebff;
+}
+
+.postMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.postTags {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.postTags span {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #bdd7ff;
+}
+
+.pipelineQueues {
+  margin-top: 12px;
+}
+
+.pipelineQueueGrid {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pipelineQueueGrid article {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.pipelineQueueGrid h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.pipelineQueueGrid ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.pipelineQueueGrid li {
+  font-size: 12px;
+}
+
 .timelinePanel {
   margin-top: 12px;
   min-height: 0;
@@ -216,6 +366,32 @@ a {
   font-size: 11px;
 }
 
+.pipelineTiming {
+  margin-top: 12px;
+  min-height: 0;
+}
+
+.pipelineTimingGrid {
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pipelineTimingGrid div {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pipelineTimingGrid span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .mainGrid {
   margin-top: 14px;
   display: grid;
@@ -231,6 +407,23 @@ a {
 
 .reactFlowWrap {
   height: 520px;
+}
+
+.reactFlowWrap .react-flow__edges {
+  opacity: 1;
+}
+
+.reactFlowWrap .react-flow__edge-path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.reactFlowWrap .react-flow__node {
+  z-index: 2;
+}
+
+.reactFlowWrap .react-flow__edge {
+  z-index: 1;
 }
 
 .flowEmpty {
@@ -291,6 +484,10 @@ a {
   background: var(--card);
   border-radius: 12px;
   min-height: 320px;
+}
+
+.pipelineTiming.panel {
+  min-height: 0;
 }
 
 .panelHeader {
@@ -403,7 +600,15 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .pipelineTimingGrid {
+    grid-template-columns: 1fr;
+  }
+
   .mainGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pipelineQueueGrid {
     grid-template-columns: 1fr;
   }
 }
@@ -841,6 +1046,181 @@ a {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.observerTheme {
+  --ink: #181818;
+  --muted: #555555;
+  --card: rgba(255, 255, 255, 0.72);
+  --border: rgba(0, 0, 0, 0.16);
+  --accent: #2f2f2f;
+  --flow-node-text: #171717;
+  --flow-grid-color: #d2d2d2;
+  --flow-edge-color: #2b2b2b;
+  --flow-node-done-bg: #d7e8dc;
+  --flow-node-done-border: #5f806b;
+  --flow-node-active-bg: #d9e5f5;
+  --flow-node-active-border: #4e6383;
+  --flow-node-pending-bg: #e8e8e8;
+  --flow-node-pending-border: #666666;
+}
+
+.observerTheme .termsBar {
+  margin-top: 102px;
+}
+
+.observerTheme .observerTermsBar {
+  max-width: 1180px;
+}
+
+.observerTheme .appShell {
+  position: relative;
+  z-index: 2;
+  max-width: 1180px;
+  padding: 20px;
+}
+
+.observerTheme .topBanner,
+.observerTheme .pipelineBar,
+.observerTheme .controlsBar,
+.observerTheme .panel,
+.observerTheme .postCard,
+.observerTheme .statCard {
+  background: rgba(255, 255, 255, 0.74);
+  border-color: rgba(0, 0, 0, 0.14);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.07);
+}
+
+.observerTheme .topBanner {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(235, 235, 235, 0.78));
+}
+
+.observerTheme .pill,
+.observerTheme .postTags span,
+.observerTheme .flowLegend span {
+  color: #4a4a4a;
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(0, 0, 0, 0.16);
+}
+
+.observerTheme .controlsGroup button,
+.observerTheme .controlsGroup select,
+.observerTheme .controlsGroup input,
+.observerTheme .observerTabBtn {
+  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.76);
+  color: #1b1b1b;
+  border-radius: 999px;
+}
+
+.observerTheme .observerTabBtn.active,
+.observerTheme .controlsGroup button:hover {
+  background: #141414;
+  color: #f6f6f6;
+  border-color: rgba(0, 0, 0, 0.45);
+}
+
+.observerTheme .observerTabs {
+  border-color: rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.observerTheme .topBanner h1,
+.observerTheme .panelHeader h2,
+.observerTheme .observerTabBtn {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.observerTheme .observerTabBtn {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.observerTheme .postRisk {
+  border-color: rgba(0, 0, 0, 0.24);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.observerTheme .postBody,
+.observerTheme .postHead h2,
+.observerTheme .panelHeader h2,
+.observerTheme .statValue,
+.observerTheme .feedTop {
+  color: #171717;
+}
+
+.observerTheme .rfNodeLabel strong,
+.observerTheme .rfNodeLabel span {
+  color: #171717;
+}
+
+.observerTheme .feedMeta,
+.observerTheme .postMeta,
+.observerTheme .postHead p,
+.observerTheme .statLabel,
+.observerTheme .lastUpdated,
+.observerTheme .pipelineTimingGrid span,
+.observerTheme .nodeId,
+.observerTheme .flowLegend,
+.observerTheme .searchHint,
+.observerTheme .topBanner p {
+  color: #585858;
+}
+
+.observerTheme .timelineStage,
+.observerTheme .pipelineTimingGrid div,
+.observerTheme .nodeCard,
+.observerTheme .feedItem,
+.observerTheme .edgeRow,
+.observerTheme .flowEdges,
+.observerTheme .panelHeader,
+.observerTheme .flowLegend {
+  border-color: rgba(0, 0, 0, 0.14);
+}
+
+.observerTheme .nodeIdle {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.observerTheme .nodeActive {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+.observerTheme .nodeSettled {
+  background: rgba(0, 0, 0, 0.14);
+  border-color: rgba(0, 0, 0, 0.28);
+}
+
+.observerTheme .nodeError {
+  background: rgba(90, 20, 20, 0.12);
+  border-color: rgba(120, 35, 35, 0.32);
+}
+
+.observerTheme .legendDone {
+  background: rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.25);
+  color: #1f1f1f;
+}
+
+.observerTheme .legendActive {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.38);
+  color: #111111;
+}
+
+.observerTheme .legendPending {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #454545;
+}
+
+.observerTheme .errorBanner {
+  background: rgba(120, 35, 35, 0.1);
+  color: #5d1414;
+  border-color: rgba(120, 35, 35, 0.3);
 }
 
 .reveal {

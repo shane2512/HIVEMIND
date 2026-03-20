@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import ReactFlow, { Background, Controls, MarkerType } from 'reactflow';
+import ReactFlow, { Background, Controls, MarkerType, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 function shortLabel(agentId) {
@@ -18,23 +18,23 @@ function shortLabel(agentId) {
 function statusColor(state) {
   if (state === 'DONE') {
     return {
-      background: 'rgba(73, 209, 125, 0.2)',
-      border: '1px solid rgba(73, 209, 125, 0.65)',
-      boxShadow: '0 0 0 1px rgba(73, 209, 125, 0.25) inset'
+      background: 'var(--flow-node-done-bg, #d8efe2)',
+      border: '1px solid var(--flow-node-done-border, #6ca886)',
+      boxShadow: '0 0 0 1px var(--flow-node-done-shadow, rgba(108, 168, 134, 0.25)) inset'
     };
   }
 
   if (state === 'ACTIVE') {
     return {
-      background: 'rgba(83, 200, 255, 0.2)',
-      border: '1px solid rgba(83, 200, 255, 0.65)',
-      boxShadow: '0 0 0 1px rgba(83, 200, 255, 0.25) inset, 0 0 14px rgba(83, 200, 255, 0.18)'
+      background: 'var(--flow-node-active-bg, #d4e8ff)',
+      border: '1px solid var(--flow-node-active-border, #4d79b7)',
+      boxShadow: '0 0 0 1px var(--flow-node-active-shadow, rgba(77, 121, 183, 0.25)) inset, 0 0 10px var(--flow-node-active-glow, rgba(77, 121, 183, 0.22))'
     };
   }
 
   return {
-    background: 'rgba(160, 173, 195, 0.12)',
-    border: '1px solid rgba(45, 63, 98, 0.9)'
+    background: 'var(--flow-node-pending-bg, #e6e9ef)',
+    border: '1px solid var(--flow-node-pending-border, #6f7c96)'
   };
 }
 
@@ -129,24 +129,38 @@ function buildGraph(pipeline) {
       style: {
         width: 190,
         borderRadius: 12,
-        color: '#eaf0ff',
+        color: 'var(--flow-node-text, #eaf0ff)',
         fontSize: 12,
         transition: 'all 220ms ease',
         ...palette
-      }
+      },
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left
     };
   };
+
+  const makeEdge = (source, target, animated = false) => ({
+    id: `edge-${edgeCounter++}`,
+    source,
+    target,
+    type: 'smoothstep',
+    markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--flow-edge-color, #223454)' },
+    animated,
+    style: {
+      stroke: 'var(--flow-edge-color, #223454)',
+      strokeWidth: 2.4,
+      zIndex: 0
+    },
+    pathOptions: {
+      borderRadius: 14,
+      offset: 20
+    }
+  });
 
   nodes.push(makeNode('watcher-01', 'Watcher', pipeline.taskId || '-', 20, 120));
   nodes.push(makeNode('plumber-01', 'Plumber', pipeline.plannerMode || 'unknown', 250, 120));
 
-  edges.push({
-    id: `edge-${edgeCounter++}`,
-    source: 'watcher-01',
-    target: 'plumber-01',
-    markerEnd: { type: MarkerType.ArrowClosed },
-    animated: states.get('plumber-01') === 'ACTIVE'
-  });
+  edges.push(makeEdge('watcher-01', 'plumber-01', states.get('plumber-01') === 'ACTIVE'));
 
   stageIndexes.forEach((index, groupPosition) => {
     const group = stageGroups.get(index);
@@ -165,13 +179,7 @@ function buildGraph(pipeline) {
 
   if (stageIndexes.length) {
     for (const targetId of stageIdsByIndex.get(stageIndexes[0]) || []) {
-      edges.push({
-        id: `edge-${edgeCounter++}`,
-        source: 'plumber-01',
-        target: targetId,
-        markerEnd: { type: MarkerType.ArrowClosed },
-        animated: states.get(targetId) === 'ACTIVE'
-      });
+      edges.push(makeEdge('plumber-01', targetId, states.get(targetId) === 'ACTIVE'));
     }
   }
 
@@ -185,13 +193,7 @@ function buildGraph(pipeline) {
       if (deps.length) {
         deps.forEach((dep) => {
           for (const sourceId of stageIdsByIndex.get(Number(dep)) || []) {
-            edges.push({
-              id: `edge-${edgeCounter++}`,
-              source: sourceId,
-              target: targetId,
-              markerEnd: { type: MarkerType.ArrowClosed },
-              animated: states.get(targetId) === 'ACTIVE'
-            });
+            edges.push(makeEdge(sourceId, targetId, states.get(targetId) === 'ACTIVE'));
           }
         });
         return;
@@ -203,13 +205,7 @@ function buildGraph(pipeline) {
 
       const prevIndex = stageIndexes[groupPosition - 1];
       for (const sourceId of stageIdsByIndex.get(prevIndex) || []) {
-        edges.push({
-          id: `edge-${edgeCounter++}`,
-          source: sourceId,
-          target: targetId,
-          markerEnd: { type: MarkerType.ArrowClosed },
-          animated: states.get(targetId) === 'ACTIVE'
-        });
+        edges.push(makeEdge(sourceId, targetId, states.get(targetId) === 'ACTIVE'));
       }
     });
   });
@@ -254,7 +250,7 @@ export default function PipelineFlow({ pipeline }) {
           nodesConnectable={false}
           elementsSelectable={false}
         >
-          <Background gap={20} color="#223454" />
+          <Background gap={20} color="var(--flow-grid-color, #223454)" />
           <Controls showInteractive={false} position="bottom-right" />
         </ReactFlow>
       </div>
