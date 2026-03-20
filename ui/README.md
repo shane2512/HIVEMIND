@@ -1,76 +1,45 @@
 # HIVE MIND — Observer Dashboard
 
-The dashboard is a strictly read-only observer interface. Humans see everything. Humans control nothing.
+Read-only observer interface for human monitoring. The application itself remains agent-first.
 
----
+## What It Shows
+
+- Live stats: active/completed pipelines, reports, settled PIPE totals, planner mode.
+- Agent flow map with state coloring (IDLE, ACTIVE, ATTESTING, SETTLED, ERROR).
+- Unified HCS feed across task, attestation, and report topics.
+- Latest pipeline timeline with stage completion and latency checkpoints.
+- Manual refresh, poll interval controls, and JSON snapshot export for evidence capture.
 
 ## Stack
 
 - React + Vite
-- React Flow — pipeline graph visualisation
-- Hedera Mirror Node WebSocket — live HCS event stream
+- Hedera Mirror Node REST polling
 
----
+## Required Environment Variables
 
-## Layout
+Create `ui/.env.local` (or export in your shell):
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  STATS BAR                                               │
-│  Agents: 6  |  Pipelines: 3  |  PIPE Settled: 0.039    │
-│  Reports: 3  |  NFTs Minted: 0  |  Active Now: 1        │
-├──────────────────────────┬──────────────────────────────┤
-│                          │                              │
-│   AGENT CANVAS           │   HCS LIVE FEED              │
-│   (React Flow graph)     │   (scrolling messages)       │
-│                          │                              │
-│   Nodes: agents          │   TASK_BUNDLE received       │
-│   Edges: data flow       │   PIPELINE_BLUEPRINT posted  │
-│   Colours: state         │   TASK_ATTESTATION [wallet]  │
-│   Labels: PIPE amounts   │   TASK_ATTESTATION [sentiment│
-│                          │   TASK_ATTESTATION [liquidity│
-│                          │   TASK_ATTESTATION [risk]    │
-│                          │   HIVE_REPORT published      │
-│                          │   PIPELINE_COMPLETE — 0.013  │
-└──────────────────────────┴──────────────────────────────┘
+```dotenv
+VITE_MIRROR_NODE_URL=https://testnet.mirrornode.hedera.com
+VITE_HCS_TASK_TOPIC=0.0.x
+VITE_HCS_ATTESTATION_TOPIC=0.0.x
+VITE_HCS_REPORT_TOPIC=0.0.x
 ```
 
----
-
-## Agent Node States
-
-| Colour | State | Meaning |
-|---|---|---|
-| Grey | IDLE | Waiting for task assignment |
-| Blue | ACTIVE | Currently executing task |
-| Orange | ATTESTING | Submitting attestation to HCS |
-| Green | SETTLED | Task complete, payment received |
-| Red | ERROR | Task failed or timed out |
-
----
-
-## Running The Dashboard
+## Run Locally
 
 ```bash
 cd ui
 npm install
-cp ../.env .env.local   # Mirror node URL + topic IDs
 npm run dev
-# Open http://localhost:3000
 ```
 
-## Deploying To Vercel
+Open `http://localhost:3000`.
+
+## Build
 
 ```bash
 cd ui
 npm run build
-vercel deploy --prod
+npm run preview
 ```
-
----
-
-## Official Resources
-
-- [React Flow Docs](https://reactflow.dev/docs)
-- [Hedera Mirror Node WebSocket API](https://docs.hedera.com/hedera/sdks-and-apis/rest-api#websockets)
-- [Vercel Deployment Guide](https://vercel.com/docs/deployments/overview)
