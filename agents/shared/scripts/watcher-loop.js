@@ -3,6 +3,14 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { publishToHCS } = require('./hcs-publish');
+const { askLocalJson } = require('../utils/llm');
+
+function normalizeConfidence(value, fallback = 70) {
+  const raw = Number(value);
+  if (!Number.isFinite(raw)) return fallback;
+  const scaled = raw <= 1 ? raw * 100 : raw;
+  return Math.max(0, Math.min(100, Math.round(scaled)));
+}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -143,6 +151,57 @@ async function evaluateToken(token, options) {
   };
 }
 
+async function evaluateTokenWithLlm(token, deterministicResult) {
+  if (!deterministicResult.qualifies) {
+    return deterministicResult;
+  }
+
+  const llm = await askLocalJson({
+    systemPrompt: [
+      'You are a blockchain event triage agent.',
+      'Given a newly-created token and creator profile, decide whether it should trigger deeper risk analysis.',
+      'Return only JSON with keys: qualifies, reason, confidence.',
+      'qualifies must be boolean.'
+    ].join(' '),
+    userPrompt: JSON.stringify({
+      tokenId: token.token_id,
+      tokenName: token.name || '',
+      tokenSymbol: token.symbol || '',
+      createdTimestamp: token.created_timestamp,
+      creatorWallet: deterministicResult.creatorWallet,
+      creatorAgeHours: deterministicResult.creatorAgeHours,
+      creatorLiquidityHbar: deterministicResult.creatorLiquidityHbar
+    }),
+    validator: (value) => value && typeof value.qualifies === 'boolean'
+  });
+
+  if (!llm.ok) {
+    return {
+      ...deterministicResult,
+      llm: {
+        source: 'deterministic-fallback',
+        model: llm.meta && llm.meta.model ? llm.meta.model : null,
+        confidence: 55,
+        reason: 'Watcher used deterministic thresholds because LLM inference failed.',
+        error: llm.error
+      }
+    };
+  }
+
+  return {
+    ...deterministicResult,
+    qualifies: Boolean(llm.output.qualifies),
+    reason: String(llm.output.reason || '').slice(0, 220) || (llm.output.qualifies ? 'llm-qualified' : 'llm-filtered'),
+    llm: {
+      source: 'llm',
+      model: llm.meta && llm.meta.model ? llm.meta.model : null,
+      confidence: normalizeConfidence(llm.output.confidence, 70),
+      reason: String(llm.output.reason || '').slice(0, 220),
+      error: null
+    }
+  };
+}
+
 async function startWatcherLoop(custom = {}) {
   const mirrorBase = String(process.env.MIRROR_NODE_URL || 'https://testnet.mirrornode.hedera.com').replace(/\/$/, '');
   const pollIntervalMs = Number(process.env.WATCHER_POLL_INTERVAL_MS || 5000);
@@ -202,13 +261,26 @@ async function startWatcherLoop(custom = {}) {
             minLiquidityHbar
           });
 
-          if (result.qualifies) {
+          const finalResult = await evaluateTokenWithLlm(token, result);
+
+          if (finalResult.qualifies) {
             console.log(`[WATCHER] Qualifying token detected: ${token.token_id}`);
-            console.log(`[WATCHER] Creator ${result.creatorWallet} | age ${result.creatorAgeHours.toFixed(2)}h | liquidity ${result.creatorLiquidityHbar.toFixed(4)} HBAR`);
+            console.log(`[WATCHER] Creator ${finalResult.creatorWallet} | age ${finalResult.creatorAgeHours.toFixed(2)}h | liquidity ${finalResult.creatorLiquidityHbar.toFixed(4)} HBAR`);
+            if (finalResult.llm) {
+              console.log(`[WATCHER] LLM triage ${finalResult.llm.source} confidence=${finalResult.llm.confidence}`);
+            }
             const message = buildTaskBundle(token);
+            if (finalResult.llm) {
+              message.payload.triggerData.watcherReasoning = {
+                source: finalResult.llm.source,
+                confidence: finalResult.llm.confidence,
+                reason: finalResult.llm.reason,
+                model: finalResult.llm.model
+              };
+            }
             await publishToHCS(taskTopic, message);
           } else {
-            console.log(`[WATCHER] Skipped ${token.token_id}: ${result.reason}`);
+            console.log(`[WATCHER] Skipped ${token.token_id}: ${finalResult.reason}`);
           }
 
           seen.add(tokenId);
