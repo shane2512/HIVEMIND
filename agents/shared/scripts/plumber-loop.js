@@ -62,6 +62,28 @@ function isPipelineComplete(msg) {
   return msg && msg.message && msg.message.messageType === 'PIPELINE_COMPLETE';
 }
 
+function getTaskBundleValidationError(msg) {
+  const payload = msg && msg.message ? msg.message.payload || {} : {};
+  const requiredOutputType = String(payload.requiredOutputType || '').trim();
+  if (!requiredOutputType) {
+    return 'TASK_BUNDLE missing payload.requiredOutputType';
+  }
+  return null;
+}
+
+function buildPipelineFailedFromTaskId(taskId, reason) {
+  return {
+    ucpVersion: '1.0',
+    messageType: 'PIPELINE_FAILED',
+    senderId: 'plumber-01',
+    timestamp: new Date().toISOString(),
+    payload: {
+      taskId,
+      reason: String(reason || 'Pipeline assembly failed')
+    }
+  };
+}
+
 async function handlePipelineComplete(msg, state) {
   const payload = msg && msg.message ? msg.message.payload || {} : {};
   const pipelineId = payload.pipelineId;
@@ -108,9 +130,10 @@ async function bootstrapTaskCursor(state) {
     return;
   }
 
-  const latest = await readTopicMessages(taskTopic, { limit: 1 });
+  const latest = await readTopicMessages(taskTopic, { limit: 50 });
   if (latest.length > 0) {
-    state.lastTaskSequence = Math.max(state.lastTaskSequence, toSequenceNumber(latest[0]));
+    const maxSeq = latest.reduce((max, msg) => Math.max(max, toSequenceNumber(msg)), 0);
+    state.lastTaskSequence = Math.max(state.lastTaskSequence, maxSeq);
   }
 }
 
@@ -163,15 +186,48 @@ async function processTasks(manifests, state, limit) {
       continue;
     }
 
+    const validationError = getTaskBundleValidationError(msg);
+    if (validationError) {
+      console.error(`[PLUMBER] Skipping malformed TASK_BUNDLE ${taskId}: ${validationError}`);
+      try {
+        await publishToHCS(taskTopic, buildPipelineFailedFromTaskId(taskId, validationError));
+      } catch (publishErr) {
+        console.error(`[PLUMBER] Failed to publish PIPELINE_FAILED for ${taskId}: ${publishErr.message}`);
+      }
+
+      processedSet.add(taskId);
+      state.processedTaskIds = Array.from(processedSet).slice(-2000);
+      state.lastTaskSequence = Math.max(state.lastTaskSequence, seq);
+      continue;
+    }
+
     console.log(`[PLUMBER] Processing TASK_BUNDLE ${taskId}`);
+    try {
+      const startedAtMs = Date.now();
+      const result = await assemblePipeline(manifests, msg.message);
+      await publishToHCS(taskTopic, result.message);
 
-    const result = assemblePipeline(manifests, msg.message);
-    await publishToHCS(taskTopic, result.message);
+      const planner = result.planner || {};
+      const elapsedMs = Date.now() - startedAtMs;
+      const plannerMode = planner.mode || 'unknown';
+      const plannerModel = planner.model || 'n/a';
+      console.log(`[PLUMBER] Planner mode=${plannerMode} model=${plannerModel} assemblyMs=${elapsedMs}`);
+      if (result.warning) {
+        console.warn(`[PLUMBER] Planner warning: ${result.warning}`);
+      }
 
-    if (result.ok) {
-      console.log(`[PLUMBER] Published PIPELINE_BLUEPRINT for task ${taskId}`);
-    } else {
-      console.log(`[PLUMBER] Published PIPELINE_FAILED for task ${taskId}`);
+      if (result.ok) {
+        console.log(`[PLUMBER] Published PIPELINE_BLUEPRINT for task ${taskId}`);
+      } else {
+        console.log(`[PLUMBER] Published PIPELINE_FAILED for task ${taskId}`);
+      }
+    } catch (err) {
+      console.error(`[PLUMBER] Failed TASK_BUNDLE ${taskId}: ${err.message}`);
+      try {
+        await publishToHCS(taskTopic, buildPipelineFailedFromTaskId(taskId, err.message));
+      } catch (publishErr) {
+        console.error(`[PLUMBER] Failed to publish PIPELINE_FAILED for ${taskId}: ${publishErr.message}`);
+      }
     }
 
     processedSet.add(taskId);

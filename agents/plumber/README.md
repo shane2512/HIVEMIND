@@ -1,16 +1,20 @@
 # Plumber Agent
 
-Plumber reads manifests from HCS registry, builds the capability graph, and publishes cheapest valid `PIPELINE_BLUEPRINT` messages for incoming `TASK_BUNDLE` messages.
+Plumber reads manifests from HCS registry, builds the capability graph, and publishes valid `PIPELINE_BLUEPRINT` messages for incoming `TASK_BUNDLE` messages.
 
 ## Behavior
 
 - Bootstraps agent manifests from `HCS_REGISTRY_TOPIC`.
 - Watches registry updates and refreshes manifest map on new `AGENT_MANIFEST`.
 - Watches task topic for new `TASK_BUNDLE` messages.
-- Runs type-compatible cheapest-path assembly constrained by `maxBudget`.
+- Runs deterministic cheapest-path assembly constrained by type compatibility and max budget.
 - Publishes either `PIPELINE_BLUEPRINT` or `PIPELINE_FAILED` to `HCS_TASK_TOPIC`.
 - Tracks `PIPELINE_COMPLETE` messages and mints a Pipeline NFT after `PLUMBER_NFT_MINT_THRESHOLD` completions.
 - Deduplicates by `taskId` via state file `agents/plumber/.state/plumber-state.json`.
+
+## Planner Config
+
+- Plumber currently uses deterministic assembly only.
 
 ## Run
 
