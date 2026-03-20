@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import ObserverDashboard from './ObserverDashboard';
 
 const PERSONA_COPY = {
@@ -37,8 +38,7 @@ const FEATURE_CARDS = [
 
 const ROTATING_WORDS = ['observe', 'attest', 'settle', 'publish'];
 
-export default function App() {
-  const [page, setPage] = useState('landing');
+function LandingPage() {
   const [persona, setPersona] = useState('human');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -61,20 +61,6 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  if (page === 'observer') {
-    return (
-      <div className="observerRoot">
-        <div className="observerTopBar">
-          <button type="button" className="ghostBtn" onClick={() => setPage('landing')}>
-            Back to Landing
-          </button>
-          <span>Live Observer Mode</span>
-        </div>
-        <ObserverDashboard />
-      </div>
-    );
-  }
-
   return (
     <div className="landingRoot">
       <div className="landingNoise" aria-hidden="true" />
@@ -93,7 +79,7 @@ export default function App() {
           <div className="navLinks desktopOnly">
             <a className="textNav" href="#features">Features</a>
             <a className="textNav" href="#architecture">Architecture</a>
-            <button type="button" className="navBtn" onClick={() => setPage('observer')}>Observer</button>
+            <Link className="navBtn" to="/observer">Observer</Link>
           </div>
 
           <button
@@ -109,16 +95,15 @@ export default function App() {
         <div className={isMenuOpen ? 'mobileMenu open' : 'mobileMenu'}>
           <a className="mobileLink" href="#features" onClick={() => setIsMenuOpen(false)}>Features</a>
           <a className="mobileLink" href="#architecture" onClick={() => setIsMenuOpen(false)}>Architecture</a>
-          <button
-            type="button"
+          <Link
             className="mobileAction"
+            to="/observer"
             onClick={() => {
               setIsMenuOpen(false);
-              setPage('observer');
             }}
           >
             Open Observer
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -175,9 +160,9 @@ export default function App() {
             </section>
 
             <div className="ctaRow">
-              <button type="button" className="primaryBtn" onClick={() => setPage('observer')}>
+              <Link className="primaryBtn" to="/observer">
                 Open Live Observer
-              </button>
+              </Link>
               <a className="secondaryBtn" href="#features">Explore Capabilities</a>
             </div>
           </div>
@@ -202,5 +187,29 @@ export default function App() {
 
       <footer className="landingFooter">HIVE MIND / Hedera-anchored execution telemetry / verifiable by design</footer>
     </div>
+  );
+}
+
+function ObserverPage() {
+  return (
+    <div className="observerRoot">
+      <div className="observerTopBar">
+        <Link to="/" className="ghostBtn">
+          Back to Landing
+        </Link>
+        <span>Live Observer Mode</span>
+      </div>
+      <ObserverDashboard />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/observer" element={<ObserverPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
