@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.3.11",
+    "lastTouchedAt": "2026-03-19T09:37:58.350Z"
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "ollama/phi3.5"
+      },
+      "workspace": "C:\\Users\\shane\\.openclaw-report-publisher\\workspace"
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  }
+}

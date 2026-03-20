@@ -11,14 +11,29 @@
     "deploy:escrow": "hardhat run contracts/scripts/deploy-escrow.js --network hedera_testnet",
     "watcher:start": "node agents/watcher/index.js",
     "plumber:start": "node agents/plumber/index.js",
+    "wallet-analyst:start": "node agents/wallet-analyst/index.js",
+    "sentiment:start": "node agents/sentiment/index.js",
+    "liquidity:start": "node agents/liquidity/index.js",
+    "risk-scorer:start": "node agents/risk-scorer/index.js",
+    "report-publisher:start": "node agents/report-publisher/index.js",
+    "phase4:start": "node scripts/start-phase4.js",
+    "phase5:verify": "node scripts/verify-phase5.js",
+    "phase5:runbook": "node scripts/run-phase5-runbook.js",
+    "openclaw:generate-configs": "node scripts/generate-openclaw-configs.js",
     "token:test:create": "node scripts/create-test-token.js",
     "task:mock": "node scripts/publish-mock-taskbundle.js",
     "pipeline:complete": "node scripts/publish-pipeline-complete.js"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.69.0",
+    "@langchain/core": "^1.1.34",
+    "@langchain/langgraph": "^1.2.3",
+    "@langchain/ollama": "^1.2.6",
     "dotenv": "^16.4.5",
-    "ethers": "^6.13.2"
+    "ethers": "^6.13.2",
+    "hedera-agent-kit": "^3.8.1",
+    "langchain": "^1.2.35",
+    "ollama": "^0.6.3"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.6",
