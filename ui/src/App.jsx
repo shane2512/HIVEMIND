@@ -191,14 +191,57 @@ function LandingPage() {
 }
 
 function ObserverPage() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <div className="observerRoot">
-      <div className="observerTopBar">
-        <Link to="/" className="ghostBtn">
-          Back to Landing
-        </Link>
-        <span>Live Observer Mode</span>
+    <div className="landingRoot observerTheme">
+      <div className="landingNoise" aria-hidden="true" />
+
+      <header className={isScrolled ? 'siteChrome scrolled' : 'siteChrome'}>
+        <nav className="siteNav">
+          <Link type="button" className="brandWrap" to="/">
+            <span className="brandText">HIVE MIND</span>
+            <span className="brandMark">TM</span>
+          </Link>
+
+          <div className="searchShell">
+            <span className="searchHint">Observer telemetry, attestations, and final settlement feed</span>
+          </div>
+
+          <div className="navLinks desktopOnly">
+            <Link className="textNav" to="/">Landing</Link>
+            <a className="textNav" href="#observer-content">Dashboard</a>
+            <Link className="navBtn" to="/">Back Home</Link>
+          </div>
+
+          <button
+            type="button"
+            className="menuBtn"
+            aria-label="Toggle navigation"
+            onClick={() => setIsMenuOpen((open) => !open)}
+          >
+            {isMenuOpen ? 'Close' : 'Menu'}
+          </button>
+        </nav>
+
+        <div className={isMenuOpen ? 'mobileMenu open' : 'mobileMenu'}>
+          <Link className="mobileLink" to="/" onClick={() => setIsMenuOpen(false)}>Landing</Link>
+          <a className="mobileLink" href="#observer-content" onClick={() => setIsMenuOpen(false)}>Dashboard</a>
+          <Link className="mobileAction" to="/" onClick={() => setIsMenuOpen(false)}>Back Home</Link>
+        </div>
+      </header>
+
+      <div className="termsBar observerTermsBar">
+        Observer mode keeps every pipeline, attestation, and report traceable against Hedera topic history.
       </div>
+
       <ObserverDashboard />
     </div>
   );

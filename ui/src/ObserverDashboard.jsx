@@ -1,7 +1,6 @@
 ﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import StatsBar from './components/StatsBar';
 import HCSFeed from './components/HCSFeed';
-import PipelineTimeline from './components/PipelineTimeline';
 import PipelineFlow from './components/PipelineFlow';
 import { getTopics, readTopicMessages } from './topic-api';
 
@@ -10,6 +9,14 @@ const POLL_MS = 4000;
 function toMs(iso) {
   const n = Date.parse(String(iso || ''));
   return Number.isFinite(n) ? n : null;
+}
+
+function toReadableTime(ts) {
+  const n = Date.parse(String(ts || ''));
+  if (!Number.isFinite(n)) {
+    return '-';
+  }
+  return new Date(n).toLocaleString();
 }
 
 function classifyMessageType(type) {
@@ -197,6 +204,46 @@ function computeStats(taskMsgs, reportMsgs, pipelines) {
   };
 }
 
+function buildReportPosts(reportMsgs, pipelineById) {
+  return reportMsgs
+    .filter((m) => m.message?.messageType === 'HIVE_REPORT')
+    .sort((a, b) => Number(b.sequenceNumber || 0) - Number(a.sequenceNumber || 0))
+    .map((msg) => {
+      const payload = msg.message?.payload || {};
+      const pipeline = pipelineById.get(payload.pipelineId);
+      const riskLabel = String(payload.riskLabel || 'UNKNOWN');
+      const riskScore = Number(payload.riskScore || 0);
+      const tokenLabel = payload.tokenSymbol || payload.tokenName || payload.tokenId || 'Unknown token';
+
+      const headline = `${tokenLabel} / ${riskLabel} risk`;
+      const enhancedNarrative = [
+        payload.summary || 'No summary available.',
+        payload.reasoning && payload.reasoning.source === 'llm'
+          ? 'Narrative quality boosted by model reasoning before publication.'
+          : 'Narrative produced through deterministic fallback path.'
+      ].join(' ');
+
+      return {
+        id: `${payload.reportId || payload.pipelineId || 'report'}-${msg.sequenceNumber}`,
+        headline,
+        pipelineId: payload.pipelineId || '-',
+        taskId: pipeline ? pipeline.taskId : '-',
+        plannerMode: pipeline ? pipeline.plannerMode : 'unknown',
+        riskLabel,
+        riskScore: Number.isFinite(riskScore) ? riskScore : 0,
+        postedAt: msg.message?.timestamp || null,
+        sequenceNumber: msg.sequenceNumber,
+        narrative: enhancedNarrative,
+        tags: [
+          `risk:${riskLabel.toLowerCase()}`,
+          `score:${Number.isFinite(riskScore) ? riskScore : 'n/a'}`,
+          `planner:${pipeline ? pipeline.plannerMode : 'unknown'}`,
+          payload.reasoning && payload.reasoning.source ? `source:${payload.reasoning.source}` : 'source:unknown'
+        ]
+      };
+    });
+}
+
 function toPipelineSnapshot(pipeline) {
   if (!pipeline) {
     return null;
@@ -234,6 +281,7 @@ export default function ObserverDashboard() {
   const [feedFilter, setFeedFilter] = useState('all');
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [selectedPipelineId, setSelectedPipelineId] = useState('');
+  const [activeTab, setActiveTab] = useState('reports');
 
   const topics = useMemo(() => getTopics(), []);
 
@@ -311,6 +359,19 @@ export default function ObserverDashboard() {
     [selectedPipeline]
   );
 
+  const pipelineById = useMemo(() => {
+    const map = new Map();
+    for (const pipeline of pipelines) {
+      map.set(pipeline.pipelineId, pipeline);
+    }
+    return map;
+  }, [pipelines]);
+
+  const reportPosts = useMemo(
+    () => buildReportPosts(reportMsgs, pipelineById),
+    [reportMsgs, pipelineById]
+  );
+
   const stats = useMemo(
     () => computeStats(taskMsgs, reportMsgs, pipelines),
     [taskMsgs, reportMsgs, pipelines]
@@ -338,6 +399,23 @@ export default function ObserverDashboard() {
     }
     return feed.filter((m) => classifyMessageType(m.message?.messageType) === feedFilter);
   }, [feed, feedFilter]);
+
+  const selectedPipelineLogs = useMemo(() => {
+    if (!selectedPipeline) {
+      return visibleFeed;
+    }
+
+    return visibleFeed.filter((entry) => {
+      const payload = entry && entry.message ? entry.message.payload || {} : {};
+      if (payload.pipelineId && payload.pipelineId === selectedPipeline.pipelineId) {
+        return true;
+      }
+      if (payload.taskId && payload.taskId === selectedPipeline.taskId) {
+        return true;
+      }
+      return false;
+    });
+  }, [visibleFeed, selectedPipeline]);
 
   const handleExportSnapshot = () => {
     const payload = {
@@ -431,12 +509,87 @@ export default function ObserverDashboard() {
 
       {error ? <div className="errorBanner">Data error: {error}</div> : null}
 
-      <PipelineTimeline snapshot={pipelineSnapshot} />
-
-      <section className="mainGrid">
-        <PipelineFlow pipeline={selectedPipeline} nodeState={nodeState} />
-        <HCSFeed items={visibleFeed} />
+      <section className="observerTabs">
+        <button
+          type="button"
+          className={activeTab === 'reports' ? 'observerTabBtn active' : 'observerTabBtn'}
+          onClick={() => setActiveTab('reports')}
+        >
+          Report Posts
+        </button>
+        <button
+          type="button"
+          className={activeTab === 'pipelines' ? 'observerTabBtn active' : 'observerTabBtn'}
+          onClick={() => setActiveTab('pipelines')}
+        >
+          Pipeline & Logs
+        </button>
       </section>
+
+      {activeTab === 'reports' ? (
+        <section className="postStream">
+          {reportPosts.length === 0 ? (
+            <article className="postCard emptyPost">
+              <h2>No reports yet</h2>
+              <p>When report-publisher posts HIVE_REPORT events, they will appear here as on-chain post cards.</p>
+            </article>
+          ) : (
+            reportPosts.map((post) => (
+              <article key={post.id} className="postCard">
+                <header className="postHead">
+                  <div>
+                    <h2>{post.headline}</h2>
+                    <p>{post.pipelineId} / task {post.taskId}</p>
+                  </div>
+                  <div className="postRisk">
+                    <span className="postRiskLabel">{post.riskLabel}</span>
+                    <strong>{post.riskScore}</strong>
+                  </div>
+                </header>
+                <p className="postBody">{post.narrative}</p>
+                <footer className="postMeta">
+                  <span>posted {toReadableTime(post.postedAt)}</span>
+                  <span>seq {post.sequenceNumber}</span>
+                  <span>{post.plannerMode}</span>
+                </footer>
+                <div className="postTags">
+                  {post.tags.map((tag) => (
+                    <span key={`${post.id}-${tag}`}>{tag}</span>
+                  ))}
+                </div>
+              </article>
+            ))
+          )}
+        </section>
+      ) : (
+        <>
+          <section className="pipelineTiming panel">
+            <header className="panelHeader">
+              <h2>Pipeline Timing</h2>
+              <span className="pill">{selectedPipeline ? selectedPipeline.pipelineId : 'none'}</span>
+            </header>
+            <div className="pipelineTimingGrid">
+              <div>
+                <span>watcher-&gt;plumber</span>
+                <strong>{pipelineSnapshot?.latencies?.watcherToBlueprintMs != null ? `${pipelineSnapshot.latencies.watcherToBlueprintMs} ms` : '-'}</strong>
+              </div>
+              <div>
+                <span>bundle-&gt;report</span>
+                <strong>{pipelineSnapshot?.latencies?.bundleToReportMs != null ? `${pipelineSnapshot.latencies.bundleToReportMs} ms` : '-'}</strong>
+              </div>
+              <div>
+                <span>bundle-&gt;complete</span>
+                <strong>{pipelineSnapshot?.latencies?.bundleToCompleteMs != null ? `${pipelineSnapshot.latencies.bundleToCompleteMs} ms` : '-'}</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="mainGrid">
+            <PipelineFlow pipeline={selectedPipeline} nodeState={nodeState} />
+            <HCSFeed items={selectedPipelineLogs} />
+          </section>
+        </>
+      )}
     </main>
   );
 }
