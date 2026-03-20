@@ -204,6 +204,41 @@ function computeStats(taskMsgs, reportMsgs, pipelines) {
   };
 }
 
+function computeRegisteredAgentCount(registryMsgs) {
+  const manifested = new Set();
+  const latestEventByAgent = new Map();
+
+  for (const msg of registryMsgs) {
+    const agentId = msg.message?.payload?.agentId;
+    if (!agentId) {
+      continue;
+    }
+
+    const messageType = msg.message?.messageType;
+    const seq = Number(msg.sequenceNumber || 0);
+
+    if (messageType === 'AGENT_MANIFEST') {
+      manifested.add(agentId);
+    }
+
+    const prev = latestEventByAgent.get(agentId);
+    if (!prev || seq > prev.seq) {
+      latestEventByAgent.set(agentId, { seq, messageType });
+    }
+  }
+
+  let count = 0;
+  for (const agentId of manifested) {
+    const latest = latestEventByAgent.get(agentId);
+    if (latest?.messageType === 'AGENT_REVOKED') {
+      continue;
+    }
+    count += 1;
+  }
+
+  return count;
+}
+
 function buildReportPosts(reportMsgs, pipelineById) {
   return reportMsgs
     .filter((m) => m.message?.messageType === 'HIVE_REPORT')
@@ -275,6 +310,7 @@ export default function ObserverDashboard() {
   const [taskMsgs, setTaskMsgs] = useState([]);
   const [attMsgs, setAttMsgs] = useState([]);
   const [reportMsgs, setReportMsgs] = useState([]);
+  const [registryMsgs, setRegistryMsgs] = useState([]);
   const [error, setError] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [pollMs, setPollMs] = useState(POLL_MS);
@@ -290,15 +326,17 @@ export default function ObserverDashboard() {
       throw new Error('Missing VITE_HCS_TASK_TOPIC, VITE_HCS_ATTESTATION_TOPIC, or VITE_HCS_REPORT_TOPIC in ui/.env.local');
     }
 
-    const [tasks, atts, reports] = await Promise.all([
+    const [tasks, atts, reports, registry] = await Promise.all([
       readTopicMessages(topics.taskTopic, 80),
       readTopicMessages(topics.attTopic, 120),
-      readTopicMessages(topics.reportTopic, 60)
+      readTopicMessages(topics.reportTopic, 60),
+      readTopicMessages(topics.registryTopic, 200)
     ]);
 
     setTaskMsgs(tasks);
     setAttMsgs(atts);
     setReportMsgs(reports);
+    setRegistryMsgs(registry);
     setError('');
     setLastUpdatedAt(new Date().toISOString());
   }, [topics]);
@@ -373,8 +411,15 @@ export default function ObserverDashboard() {
   );
 
   const stats = useMemo(
-    () => computeStats(taskMsgs, reportMsgs, pipelines),
-    [taskMsgs, reportMsgs, pipelines]
+    () => {
+      const base = computeStats(taskMsgs, reportMsgs, pipelines);
+      const registered = computeRegisteredAgentCount(registryMsgs);
+      return {
+        ...base,
+        agentCount: registered || base.agentCount
+      };
+    },
+    [taskMsgs, reportMsgs, pipelines, registryMsgs]
   );
 
   const pipelineSnapshot = useMemo(

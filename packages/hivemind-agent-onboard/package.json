@@ -1,0 +1,25 @@
+{
+  "name": "hivemindregistration",
+  "version": "0.1.4",
+  "description": "CLI for onboarding third-party agents into HIVE MIND via Hedera HCS registry lifecycle messages.",
+  "license": "MIT",
+  "type": "commonjs",
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "bin": {
+    "hivemindregistration": "bin/hivemind-agent-onboard.js"
+  },
+  "scripts": {
+    "start": "node ./bin/hivemind-agent-onboard.js --help",
+    "test:smoke": "node ./bin/hivemind-agent-onboard.js --help"
+  },
+  "dependencies": {
+    "@hashgraph/sdk": "^2.69.0",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
