@@ -3,6 +3,7 @@ const http = require('http');
 const { spawn } = require('child_process');
 
 const PORT = Number(process.env.PORT || 10000);
+const MIRROR_BASE = String(process.env.MIRROR_NODE_URL || 'https://testnet.mirrornode.hedera.com').replace(/\/$/, '');
 
 const AGENTS = [
   { name: 'watcher', file: 'agents/watcher/index.js' },
@@ -85,6 +86,34 @@ function shutdown() {
 }
 
 const server = http.createServer((req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'GET' && req.url && req.url.startsWith('/api/v1/')) {
+    const upstream = `${MIRROR_BASE}${req.url}`;
+
+    fetch(upstream)
+      .then(async (upstreamRes) => {
+        const text = await upstreamRes.text();
+        res.writeHead(upstreamRes.status, {
+          'Content-Type': upstreamRes.headers.get('content-type') || 'application/json'
+        });
+        res.end(text);
+      })
+      .catch((err) => {
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Upstream mirror request failed', message: err.message }));
+      });
+    return;
+  }
+
   if (req.url === '/health' || req.url === '/healthz' || req.url === '/') {
     const status = collectStatus();
     const body = JSON.stringify(status, null, 2);
