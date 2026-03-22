@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import ObserverDashboard from './ObserverDashboard';
+import HederaGlobe from './components/HederaGlobe';
 
 const PERSONA_COPY = {
   human: {
@@ -46,14 +47,58 @@ function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [wordIndex, setWordIndex] = useState(0);
+  const globeRef = useRef(null);
+  const heroTitleRef = useRef(null);
+  const scrollRafRef = useRef(0);
+  const wasScrolledRef = useRef(false);
 
   const personaCopy = useMemo(() => PERSONA_COPY[persona], [persona]);
 
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll);
+    const applyScrollEffects = () => {
+      scrollRafRef.current = 0;
+      const y = window.scrollY;
+      const scrolled = y > 20;
+      if (scrolled !== wasScrolledRef.current) {
+        wasScrolledRef.current = scrolled;
+        setIsScrolled(scrolled);
+      }
+
+      const progress = Math.min(1, Math.max(0, y / (window.innerHeight * 0.6)));
+
+      if (globeRef.current) {
+        const eased = Math.pow(progress, 1.8);
+        const dropEased = Math.pow(progress, 2.7);
+        const scale = 1 + (2.1 * progress);
+        const translateX = -340 * eased;
+        const translateY = 820 * dropEased;
+        globeRef.current.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        globeRef.current.style.opacity = String(1 - (0.62 * progress));
+      }
+
+      if (heroTitleRef.current) {
+        heroTitleRef.current.style.opacity = String(1 - (progress * 0.45));
+        heroTitleRef.current.style.transform = `translateY(${Math.round(-progress * 32)}px) scale(${1 - progress * 0.04})`;
+      }
+    };
+
+    const onScroll = () => {
+      if (scrollRafRef.current) {
+        return;
+      }
+      scrollRafRef.current = window.requestAnimationFrame(applyScrollEffects);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    applyScrollEffects();
     setIsReady(true);
-    return () => window.removeEventListener('scroll', onScroll);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (scrollRafRef.current) {
+        window.cancelAnimationFrame(scrollRafRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -115,13 +160,16 @@ function LandingPage() {
 
       <main className="heroSection">
         <div className="heroGrid" aria-hidden="true" />
-        <div className="heroSphere" aria-hidden="true" />
+        <HederaGlobe sphereRef={globeRef} />
 
         <div className={isReady ? 'heroIntro reveal show' : 'heroIntro reveal'}>
           <div className="heroBadge">HEDERA AGENT MESH</div>
         </div>
 
-        <h1 className={isReady ? 'heroTitle reveal delay1 show' : 'heroTitle reveal delay1'}>
+        <h1
+          ref={heroTitleRef}
+          className={isReady ? 'heroTitle reveal delay1 show' : 'heroTitle reveal delay1'}
+        >
           The protocol to
           <span key={ROTATING_WORDS[wordIndex]} className="wordSwap"> {ROTATING_WORDS[wordIndex]}</span>
           <strong> multi-agent intelligence</strong>

@@ -1,259 +1,273 @@
-HIVE MIND: Detailed Idea and Progress Report
-Date: 2026-03-19
-Status: Live multi-agent pipeline running on Hedera Testnet with local LLM-first reasoning and successful end-to-end validation.
+﻿HIVE MIND: Detailed Idea and Progress Report
+Date: 2026-03-22
+Status: Live multi-agent Hedera pipeline with observer UI, lifecycle-based external agent onboarding, and operational one-command runtime launchers.
 
 ====================================================================
 1) Vision and Product Goal
 ====================================================================
 
-HIVE MIND is a Hedera-native autonomous intelligence system designed to evaluate token activity and publish structured risk intelligence through HCS.
+HIVE MIND is a Hedera-native autonomous intelligence pipeline that detects token activity, coordinates specialized agents, and publishes auditable risk intelligence to HCS.
 
 Primary goal:
-- Turn token-event detection into a repeatable, auditable, and mostly autonomous due-diligence workflow.
+- Convert token-event detection into a repeatable, inspectable, and mostly autonomous due-diligence workflow.
 
 Why this matters:
-- Most token-review workflows are manual, fragmented, and difficult to audit.
-- HIVE MIND makes the full decision chain observable through on-ledger message flow.
-- The architecture supports progressive intelligence upgrades (LLM-first reasoning) while preserving deterministic fallback for reliability.
+- Manual token review is fragmented and hard to audit.
+- HIVE MIND preserves the full decision chain on Hedera topics.
+- The architecture supports LLM-first intelligence with deterministic fallback for reliability.
 
-Core outcomes expected from the product:
+Core outcomes:
 - Event ingestion from Hedera ecosystem signals.
-- Pipeline planning based on registered capabilities and budget constraints.
-- Parallelized analytical stage execution.
-- Unified risk scoring and publication of a final HIVE_REPORT.
-- A verifiable, topic-driven execution trail from trigger to settlement.
+- Planner-driven pipeline assembly from registry capabilities.
+- Parallel analytical execution.
+- Unified scoring and final HIVE_REPORT publication.
+- Verifiable topic trail from trigger to completion.
 
 ====================================================================
-2) System Architecture Overview
+2) Current Architecture Overview
 ====================================================================
 
 Main agent roles:
 - watcher:
-  - Detects qualifying tokens (age/liquidity filters plus LLM triage).
+  - Detects candidate tokens (filters plus optional LLM triage).
   - Publishes TASK_BUNDLE.
 
 - plumber:
-  - Loads agent manifests from registry topic.
+  - Loads AGENT_MANIFEST entries from registry topic.
   - Builds and publishes PIPELINE_BLUEPRINT or PIPELINE_FAILED.
-  - Tracks pipeline completion counts and optional NFT mint thresholds.
+  - Tracks completion behavior and downstream orchestration state.
 
 - wallet-analyst:
   - Performs wallet/account behavior analysis.
-  - Publishes TASK_ATTESTATION with WalletHistory output summary.
+  - Publishes TASK_ATTESTATION with wallet output summary.
 
 - sentiment:
-  - Scans topic/message context for token mention sentiment.
-  - Publishes TASK_ATTESTATION with SentimentScore output summary.
+  - Classifies topic/message context and sentiment posture.
+  - Publishes TASK_ATTESTATION with SentimentScore summary.
 
 - liquidity:
   - Computes concentration and liquidity indicators.
-  - Publishes TASK_ATTESTATION with LiquidityReport output summary.
+  - Publishes TASK_ATTESTATION with LiquidityReport summary.
 
 - risk-scorer:
   - Aggregates upstream outputs into normalized risk.
-  - Publishes TASK_ATTESTATION with RiskScore output summary.
+  - Publishes TASK_ATTESTATION with RiskScore summary.
 
 - report-publisher:
-  - Builds final HIVE_REPORT.
+  - Assembles final HIVE_REPORT.
   - Publishes TASK_ATTESTATION and PIPELINE_COMPLETE.
 
-Execution order:
+Nominal execution order:
 - Stage 0 in parallel: wallet-analyst, sentiment, liquidity
 - Stage 1: risk-scorer
 - Stage 2: report-publisher
 
-Topic-oriented protocol model:
+Topic-oriented protocol chain:
 - TASK_BUNDLE -> PIPELINE_BLUEPRINT -> TASK_ATTESTATION chain -> HIVE_REPORT -> PIPELINE_COMPLETE
 
 ====================================================================
-3) LLM Strategy and Reasoning Model
+3) Technology Stack and Why It Was Chosen
+====================================================================
+
+Runtime and language:
+- Node.js >= 18 (JavaScript, CommonJS)
+- Why: fast iteration for multi-process agent workers, rich SDK ecosystem, straightforward local scripting.
+
+Ledger and network services:
+- Hedera Consensus Service (HCS)
+  - Why: immutable, ordered, auditable message stream for registry, tasks, attestations, and reports.
+- Hedera Token Service (HTS)
+  - Why: native token operations for PIPE economics and test token lifecycle.
+- Hedera EVM + contracts (Hardhat)
+  - Why: escrow/payment trust enforcement where programmable on-chain logic is needed.
+
+Core libraries:
+- @hashgraph/sdk
+  - Why: native Hedera integration for topic writes, reads, and token operations.
+- hedera-agent-kit
+  - Why: agent-oriented Hedera utility integration.
+- langchain, @langchain/core, @langchain/langgraph, @langchain/ollama
+  - Why: structured LLM orchestration and local model routing.
+- ollama
+  - Why: local phi3.5 inference path for private, low-latency reasoning.
+- dotenv
+  - Why: environment-driven runtime config across scripts/agents/UI.
+- ethers
+  - Why: EVM interaction support in contract/payment flows.
+
+Frontend and visualization:
+- React + Vite observer UI
+  - Why: rapid UI iteration, lightweight build pipeline, responsive dashboard rendering.
+
+Packaging and distribution:
+- npm package: hivemindregistration (v0.1.4)
+  - Why: simple external-agent onboarding UX through one CLI install and one command flow.
+
+====================================================================
+4) LLM Strategy and Reliability Model
 ====================================================================
 
 Design principle:
 - LLM-first reasoning with deterministic fallback.
 
-What LLM-first means in this project:
-- The default path asks local Ollama model phi3.5 for structured reasoning and/or summary.
-- If LLM returns invalid output, times out, or is disabled, deterministic logic keeps pipeline continuity.
-
-Shared LLM utility:
-- askLocalText and askLocalJson wrappers for local inference calls.
-- JSON extraction and validation helpers.
-- Confidence normalization and output sanitation patterns.
-
-LLM-first coverage by component:
-- watcher triage decision.
-- plumber stage selection and planning rationale.
-- wallet behavior interpretation.
-- sentiment classification.
-- liquidity risk interpretation.
-- risk-score synthesis.
-- report summary composition.
+Meaning in practice:
+- Default path uses local Ollama model (phi3.5) for structured reasoning/summaries.
+- Invalid/timeout/offline model output falls back to deterministic logic.
 
 Reliability controls:
-- Supports confidence values in either 0-1 or 0-100 range.
-- Validates expected JSON schema before accepting model output.
-- Applies guardrails when model output could contradict basic risk sanity.
+- Confidence normalization and schema checking.
+- Guardrails for high-risk concentration edge cases.
+- Structured output validation before acceptance.
+
+Coverage:
+- watcher triage
+- plumber planning rationale
+- worker interpretation and synthesis
+- risk scoring and report narrative augmentation
 
 ====================================================================
-4) Major Implementation Work Completed
+5) Protocol and Registry Model (Updated)
 ====================================================================
 
-A) Shared reasoning and Hedera integration foundations
-- Added shared local LLM utility.
-- Added shared Hedera LangChain utility.
-- Updated shared Hedera kit entry to use new integration path.
+Supported lifecycle message types now include:
+- AGENT_REGISTER
+- AGENT_CLAIMED
+- AGENT_HEARTBEAT
+- AGENT_REVOKED
+- AGENT_MANIFEST
 
-B) Agent runtime entrypoints and loops
-- Added or finalized runtime entrypoints for:
-  - wallet-analyst
-  - sentiment
-  - liquidity
-  - risk-scorer
-  - report-publisher
-- Added or upgraded shared loops and helper scripts for worker orchestration, risk scoring, report publishing, and pipeline utilities.
+These are validated in shared UCP schema handling.
 
-C) OpenClaw and model configuration tooling
-- Added profile config generator script.
-- Regenerated openclaw-configs artifacts for all target agents.
-- Updated install scripts to sync shared scripts and shared utils into profile workspaces.
-- Added local model instruction file for hivemind-phi3.5.
+Current operational behavior:
+- Scheduler/planner discovery is still manifest-centric.
+- Lifecycle events provide stronger operational governance (claim/lease/revoke) and are used by onboarding and cleanup workflows.
 
-D) Dependencies and npm scripts
-- Added required local-LLM and LangChain dependencies.
-- Added scripts for phase startup, verification, runbook orchestration, and config generation.
+Practical "remove agent" semantics:
+- Topic history is immutable; deletion is not possible.
+- Effective removal is AGENT_REVOKED as latest state for an agent.
 
 ====================================================================
-5) Runtime Hardening and Bug Fixes Applied
+6) External Agent Onboarding Package
 ====================================================================
 
-1. Confidence normalization
-- Problem: mixed confidence scales from model outputs.
-- Fix: normalized to bounded 0-100 consistently.
+Package:
+- Name: hivemindregistration
+- Version: 0.1.4
+- Install: npm install -g hivemindregistration@latest
 
-2. Signal serialization
-- Problem: object-shaped signals rendered as non-useful values.
-- Fix: normalized to readable string signals.
+Key commands:
+- onboard (one-shot flow): register + claimed + heartbeat + manifest + verify
+- register, claim, heartbeat, manifest, verify (granular flow)
+- doctor (env/connectivity checks)
+- env-example
+- step-by-step
+- dry-run mode
 
-3. Liquidity guardrails
-- Problem: edge outputs could understate concentration risk.
-- Fix: deterministic safety limits for extreme concentration scenarios.
-
-4. Plumber resilience
-- Problem: malformed TASK_BUNDLE could stall processing loop.
-- Fix: malformed bundles are skipped and converted into PIPELINE_FAILED path instead of blocking run.
-
-5. Worker lookup/read depth
-- Problem: under topic churn, task lookups could miss related bundles.
-- Fix: larger read window and configurable lookup depth.
-
-6. Verify resilience
-- Problem: transient fetch failures could abort verification early.
-- Fix: retry within polling loop and continue until timeout.
-
-7. Runbook determinism improvements
-- Seeded TASK_BUNDLE after token creation.
-- Optional watcher inclusion mode.
-- State reset behavior for clean runs by default.
+Important fixes completed:
+- Key parsing/signing path corrected to avoid INVALID_SIGNATURE cases.
+- Onboard verify path now retries while Mirror indexing catches up.
 
 ====================================================================
-6) UI Delivery Status
+7) Runtime Orchestration and Startup UX
 ====================================================================
 
-UI stack:
-- React + Vite observer dashboard.
+Added startup modes in root scripts:
+- all:start
+  - Starts 7 agents plus UI from one command in a shared process runner.
+- all:start:separate
+  - Starts each agent and UI in separate PowerShell windows.
+- all:start:separate:dry
+  - Prints launch commands without starting processes.
 
-What the UI currently exposes:
-- Pipeline and activity stats.
-- Active/completed pipeline visibility.
-- Flow/timeline style operational visualization.
-- Feed filtering.
-- Snapshot export.
-
-Operational note:
-- UI is running against the same Mirror/HCS environment used by agents and verification scripts.
-
-====================================================================
-7) Validation and Evidence Snapshot
-====================================================================
-
-Recent successful end-to-end validation included:
-- All agents running in separate terminals.
-- UI running concurrently.
-- Real HTS token creation executed.
-- Full chain confirmation:
-  - TASK_BUNDLE observed
-  - PIPELINE_BLUEPRINT observed
-  - 5 expected TASK_ATTESTATION events observed
-  - HIVE_REPORT observed
-  - PIPELINE_COMPLETE observed
-
-Observed settlement behavior:
-- totalPipeSettled present and consistent with pipeline economics.
-- allAttestationsVerified true in completion payload.
-
-Recorded successful run artifact:
-- run id: run-20260319-104222
-- verify status: ok true
-
-Additional live check completed later in session:
-- tokenId: 0.0.8286884
-- verify status: ok true
+Why both modes exist:
+- all:start: easier one-process control and shutdown.
+- all:start:separate: better per-agent visibility and debugging isolation.
 
 ====================================================================
-8) Current Operational State
+8) Observer UI and Telemetry Status
 ====================================================================
 
-As of 2026-03-19:
-- Core architecture is implemented and functioning.
-- Agents are LLM-first with deterministic fallback behavior.
-- Runbook and verification tooling are usable for repeatable evidence generation.
-- UI is operational for real-time observation.
+Observer capabilities:
+- Pipeline stats and active/completed visibility.
+- Feed filtering and snapshot export.
+- Flow view and timing summary.
+- Registry-aware agent count.
 
-In plain terms:
-- The project is no longer just a prototype design.
-- It is running end-to-end with live Hedera data and successful completion signals.
+Critical fix applied:
+- Agent count now excludes agents whose latest registry event is AGENT_REVOKED.
+- This prevents historical manifests from inflating active agent totals.
+
+Landing page updates:
+- Human CTA now references package install command.
+- Agent CTA now shows filled onboarding command template.
+
+UI topic config in use:
+- VITE_MIRROR_NODE_URL=https://testnet.mirrornode.hedera.com
+- VITE_HCS_TASK_TOPIC=0.0.8265606
+- VITE_HCS_ATTESTATION_TOPIC=0.0.8265607
+- VITE_HCS_REPORT_TOPIC=0.0.8265609
+- VITE_HCS_REGISTRY_TOPIC=0.0.8265605
 
 ====================================================================
-9) Known Constraints and Tradeoffs
+9) Validation and Operations Snapshot
 ====================================================================
 
-1. High event volume can introduce queueing delay
-- Mitigated by deterministic runbook mode and state reset options.
+Historical successful end-to-end evidence exists (task -> blueprint -> attestations -> report -> complete).
+
+Recent operational updates validated:
+- One-step onboarding flow now publishes all required lifecycle/manifest events.
+- Mirror-verify retry logic confirms eventual visibility.
+- Revocation workflows used to deactivate recently registered external agents.
+- Registry now reconciled to baseline active set after cleanup.
+
+Current registry state (latest checks in this session context):
+- Active manifested non-revoked agents: 7
+
+====================================================================
+10) Known Constraints and Tradeoffs
+====================================================================
+
+1. Mirror indexing delay
+- New topic events can appear with short lag.
+- Mitigation: retry-aware verify loop.
 
 2. LLM output variability
-- Mitigated by validators, normalization, and deterministic fallback.
+- Mitigation: schema guards, normalization, deterministic fallback.
 
-3. External network/mirror intermittency
-- Mitigated by retry-aware verification and loop reconnection behavior.
+3. High topic churn/read windows
+- Mitigation: tuned read depth and robust loop behavior.
 
-4. Planner quality depends on manifest quality
-- Better manifest metadata yields more reliable stage plans.
+4. Immutable history model
+- Agents cannot be deleted from history.
+- Operational deactivation relies on AGENT_REVOKED latest state.
 
 ====================================================================
-10) What Is Ready vs What Is Next
+11) Ready Now vs Next
 ====================================================================
 
 Ready now:
-- Live multi-agent execution.
-- LLM-first reasoning path across full chain.
-- HCS-based auditable event lifecycle.
-- UI observer and verification scripts.
+- Live multi-agent pipeline execution.
+- LLM-first with deterministic fallback.
+- HCS-auditable lifecycle and report chain.
+- External agent onboarding via npm package.
+- One-command startup (shared and separate-terminal modes).
+- Observer dashboard with revocation-aware active agent count.
 
-Next recommended steps:
-- Add richer regression suites around runbook modes.
-- Expand alerting and health telemetry (per-agent lag, queue depth, failure rate).
-- Add environment profiles (dev/demo/load) with explicit throughput guardrails.
-- Add signed evidence packaging for report + attestation bundles.
+Recommended next steps:
+- Enforce lifecycle lease/claim state directly in planner scheduling logic.
+- Add explicit health telemetry (per-agent lag/failure/queue depth).
+- Add signed evidence bundles for report plus attestation artifacts.
+- Add regression tests for onboarding and revocation state transitions.
 
 ====================================================================
-11) Final Summary
+12) Final Summary
 ====================================================================
 
-HIVE MIND has reached a meaningful execution milestone:
-- the original concept (autonomous Hedera intelligence pipeline) is implemented,
-- LLM-first reasoning is active across the agent chain,
-- deterministic safeguards are in place,
-- and real tokens have been processed through full end-to-end completion with verifiable outputs.
+HIVE MIND has moved from concept to a functioning Hedera-native autonomous intelligence platform with:
+- production-style agent orchestration,
+- verifiable topic-based execution traces,
+- local LLM-first reasoning and fallback safety,
+- external onboarding and lifecycle governance,
+- and operational tooling for startup, verification, and cleanup.
 
-This provides a solid foundation for scaling reliability, observability, and productization.
+The system is now positioned for reliability hardening and policy-level scheduler enforcement rather than foundational architecture work.

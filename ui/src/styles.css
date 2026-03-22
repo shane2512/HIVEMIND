@@ -813,6 +813,7 @@ a {
 
 .heroSection {
   position: relative;
+  overflow: visible;
   max-width: 1180px;
   margin: 0 auto;
   padding: 52px 20px 22px;
@@ -832,17 +833,26 @@ a {
 
 .heroSphere {
   position: absolute;
-  right: -120px;
+  right: 12px;
   top: -40px;
   width: 530px;
   height: 530px;
   border-radius: 999px;
-  background:
-    radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.9), rgba(178, 178, 178, 0.5) 38%, rgba(68, 68, 68, 0.2) 62%, transparent 72%),
-    radial-gradient(circle at 70% 68%, rgba(0, 0, 0, 0.25), transparent 66%);
-  filter: blur(1px);
-  opacity: 0.7;
+  overflow: hidden;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transform-origin: center top;
+  will-change: transform;
+  transition: opacity 120ms linear;
   pointer-events: none;
+}
+
+.heroSphere canvas {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 999px;
+  overflow: hidden;
+  display: block;
 }
 
 .heroBadge {
@@ -1000,8 +1010,8 @@ a {
   border: 1px solid rgba(0, 0, 0, 0.14);
   border-radius: 16px;
   padding: 18px;
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.8), rgba(232, 232, 232, 0.75));
-  backdrop-filter: blur(4px);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.28), rgba(232, 232, 232, 0.2));
+  backdrop-filter: blur(2px);
 }
 
 .featureCard h3 {
@@ -1035,7 +1045,7 @@ a {
   border: 1px dashed rgba(0, 0, 0, 0.25);
   border-radius: 12px;
   color: #303030;
-  background: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .landingFooter {
