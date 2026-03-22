@@ -4,6 +4,7 @@
   "private": true,
   "description": "HIVE MIND autonomous Hedera agent pipeline",
   "scripts": {
+    "start": "node scripts/start-render-web.js",
     "test:connection": "node agents/shared/test-connection.js",
     "setup:topics": "node agents/shared/setup-topics.js",
     "deploy:pipe-token": "node contracts/deploy-pipe-token.js",
@@ -16,6 +17,10 @@
     "liquidity:start": "node agents/liquidity/index.js",
     "risk-scorer:start": "node agents/risk-scorer/index.js",
     "report-publisher:start": "node agents/report-publisher/index.js",
+    "all:start": "node scripts/start-all.js",
+    "all:start:render": "node scripts/start-render-web.js",
+    "all:start:separate": "powershell -ExecutionPolicy Bypass -File scripts/start-all-separate.ps1",
+    "all:start:separate:dry": "powershell -ExecutionPolicy Bypass -File scripts/start-all-separate.ps1 -DryRun",
     "phase4:start": "node scripts/start-phase4.js",
     "phase5:verify": "node scripts/verify-phase5.js",
     "phase5:runbook": "node scripts/run-phase5-runbook.js",
