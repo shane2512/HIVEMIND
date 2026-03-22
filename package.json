@@ -45,7 +45,8 @@
     "ethers": "^6.13.2",
     "hedera-agent-kit": "^3.8.1",
     "langchain": "^1.2.35",
-    "ollama": "^0.6.3"
+    "ollama": "^0.6.3",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.6",
