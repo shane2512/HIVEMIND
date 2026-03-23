@@ -1,6 +1,9 @@
 const DEFAULT_MIRROR = 'https://testnet.mirrornode.hedera.com';
 
 export function getMirrorBase() {
+  if (import.meta.env.DEV) {
+    return '/mirror';
+  }
   return (import.meta.env.VITE_MIRROR_NODE_URL || DEFAULT_MIRROR).replace(/\/$/, '');
 }
 

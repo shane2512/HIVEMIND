@@ -1,8 +1,8 @@
 # HIVE MIND
 
-**Autonomous Agent Pipeline Network on Hedera**
+**Self-Evolving Agentic Network on Hedera**
 
-> A self-sustaining, agent-native intelligence network where OpenClaw agents autonomously perceive on-chain events, self-assemble into task pipelines, pay each other in PIPE tokens via HTS, attest work on HCS, and collectively build a growing intelligence layer — with zero human involvement after deployment.
+> A self-evolving, agent-native intelligence network where OpenClaw agents register capabilities on HCS, dynamically assemble pipelines from available agents, and autonomously execute on-chain workflows with PIPE token incentives via HTS. The current deployment focuses on token-creation analysis, with the same architecture designed to expand to many on-chain event types.
 
 [![Hedera Testnet](https://img.shields.io/badge/Network-Hedera%20Testnet-3d1fba)](https://portal.hedera.com)
 [![OpenClaw](https://img.shields.io/badge/Agents-OpenClaw-orange)](https://openclaw.ai)
@@ -12,24 +12,24 @@
 
 ## What Is HIVE MIND?
 
-HIVE MIND is a killer app for the Agentic Society. It is a network of OpenClaw agents that collectively protect the Hedera ecosystem from bad actors — autonomously, continuously, and without any human involvement after deployment.
+HIVE MIND is a self-evolving agentic network for the Agentic Society. It continuously discovers what agents are registered in the HCS registry, composes pipelines from their declared capabilities, and executes those pipelines autonomously after deployment.
 
-Every agent is an **OpenClaw instance with a specialist HIVE MIND skill installed**. Each runs its own continuous loop, publishes its capabilities to HCS, earns PIPE tokens for its work, and feeds its output into the next agent downstream. The network does not just produce reports — it acts on them. A HIGH RISK verdict does not sit on HCS doing nothing. It triggers a second pipeline that blacklists the creator wallet across the entire network, so every agent in the ecosystem automatically refuses to interact with that wallet going forward.
+Every agent is an **OpenClaw instance with a specialist HIVE MIND skill installed**. Each runs its own continuous loop, publishes capabilities to HCS, earns PIPE tokens for completed work, and feeds outputs into downstream agents. The system is designed to adapt as agents join, leave, or update their manifests, so pipeline composition evolves with the registry state. Today, this deployment is specialized for HTS token-creation analysis; next, the same orchestration model can be applied to broader on-chain events such as treasury flows, contract interactions, governance actions, and anomaly patterns.
 
-**The value is cumulative and permanent.** Every pipeline that runs makes the Hedera agent ecosystem provably safer for every other agent. The more agents that join, the faster bad actors are identified and the broader the protection becomes.
+**The value is cumulative and permanent.** Every pipeline run adds reusable intelligence to the network and improves future routing and decision quality. The more capable agents that register, the more complex and useful workflows HIVE MIND can assemble automatically.
 
-When a new HTS token is created on Hedera:
+Current active use case: when a new HTS token is created on Hedera:
 
 1. A **Watcher Agent** detects it from the live HTS event stream — no human trigger
-2. A **Plumber Agent** auto-assembles a 5-agent analysis pipeline from HCS manifests
+2. A **Plumber Agent** assembles the analysis pipeline from currently registered HCS manifests
 3. **Wallet Analyst**, **Sentiment**, and **Liquidity** agents run in parallel
 4. A **Risk Scorer** combines their outputs into a weighted risk score
 5. A **Report Publisher** posts the verdict permanently to HCS
-6. If the verdict is HIGH RISK — a second pipeline fires automatically, blacklisting the creator wallet across the network
-7. Every agent in the ecosystem reads the blacklist and refuses further interaction with that wallet
+6. If the verdict is HIGH RISK, policy pipelines can trigger configurable responses (for example: warnings, watchlist updates, tighter trust thresholds, or selective restriction flows)
+7. Agents consume those policy signals and adjust behavior according to configured risk controls, instead of enforcing one fixed global block action
 8. All agents receive PIPE tokens via EVM escrow — trust enforced on-chain, not by agreement
 
-Zero human input. Permanent on Hedera. Every new agent that joins extends the reach of every past verdict.
+Zero human input during runtime. Permanent attestation trail on Hedera. Every new registered agent expands what the network can do next.
 
 ---
 
@@ -237,7 +237,7 @@ hivemind/
 |---|---|
 | Agent-first — OpenClaw primary users | Blockchain events trigger everything. No human input after deployment. |
 | Autonomous behaviour | Agents perceive, decide, hire, pay, and publish independently |
-| Clear value in multi-agent environment | Network protection is cumulative — every HIGH RISK verdict blacklists a wallet across all agents permanently. Single agent sees nothing. The full network catches bad actors before they can harm other agents. Value compounds with every new agent that joins. |
+| Clear value in multi-agent environment | Intelligence is cumulative and registry-driven: more registered agents enable richer pipelines and broader autonomous coverage. HIGH RISK outcomes can drive configurable policy responses (watchlists, warnings, selective restrictions), not a single hardcoded action. |
 | HTS usage | PIPE token for all payments, Pipeline NFTs after 10 completions |
 | HCS usage | Registry, tasks, blueprints, attestations, reports |
 | EVM usage | PipeEscrow enforces payment and verifies attestations |
