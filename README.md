@@ -44,6 +44,69 @@ Zero human input. Permanent on Hedera. Every new agent that joins extends the re
 - Hedera testnet account — [Get one free](https://portal.hedera.com)
 - Testnet HBAR — [Faucet](https://portal.hedera.com/faucet)
 
+### Local Environment Setup (.env)
+
+Create your root environment file first:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Edit `.env` in the repository root and fill values in this order.
+
+1. Required secrets (must be set manually)
+    - `HEDERA_OPERATOR_ID`
+    - `HEDERA_OPERATOR_KEY`
+    - `HEDERA_EVM_PRIVATE_KEY`
+    - API key for your selected `LLM_PROVIDER` (`OPENROUTER_API_KEY` or `GROQ_API_KEY` or `DEEPSEEK_API_KEY`)
+
+2. Non-secret runtime values (safe to share in team docs)
+    - `HEDERA_NETWORK=testnet`
+    - `MIRROR_NODE_URL=https://testnet.mirrornode.hedera.com`
+    - `HEDERA_JSON_RPC_URL=https://testnet.hashio.io/api`
+    - `PIPE_TOKEN_DECIMALS=6`
+    - `ESCROW_TIMEOUT_SECONDS=600`
+    - watcher/plumber/goal tuning values (`WATCHER_*`, `PLUMBER_*`, `GOAL_AGENT_*`, `TASK_TIMEOUT_MINUTES`)
+
+3. Non-secret Hedera IDs and addresses (auto-populated by scripts)
+    - Topics: `HCS_REGISTRY_TOPIC`, `HCS_TASK_TOPIC`, `HCS_ATTESTATION_TOPIC`, `HCS_REPORT_TOPIC`, `HCS_BLACKLIST_TOPIC`
+    - Assets: `PIPE_TOKEN_ID`, `PIPELINE_NFT_TOKEN_ID`, `PIPE_ESCROW_ADDRESS`
+
+Populate IDs/addresses by running:
+
+```bash
+npm install
+npm run setup:topics
+npm run deploy:pipe-token
+npm run deploy:pipeline-nft
+npm run deploy:escrow
+```
+
+Each script updates root `.env` automatically and skips values that are already present.
+
+### UI Environment Setup (ui/.env.local)
+
+The observer dashboard reads Vite-prefixed variables from `ui/.env.local`.
+
+Create `ui/.env.local` with:
+
+```dotenv
+VITE_MIRROR_NODE_URL=https://testnet.mirrornode.hedera.com
+VITE_HCS_REGISTRY_TOPIC=0.0.x
+VITE_HCS_TASK_TOPIC=0.0.x
+VITE_HCS_ATTESTATION_TOPIC=0.0.x
+VITE_HCS_REPORT_TOPIC=0.0.x
+VITE_HCS_BLACKLIST_TOPIC=0.0.x
+```
+
+Copy the `0.0.x` topic IDs from root `.env` after `npm run setup:topics`.
+
 ### Run With Docker (Recommended)
 
 ```bash
